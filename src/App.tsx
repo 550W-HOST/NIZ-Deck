@@ -60,6 +60,15 @@ function App() {
     void niz.connect()
   }
 
+  const handleCompatibilityConnect = (): void => {
+    setDiagnosticsOpen(true)
+    void niz.connect('compatibility')
+  }
+
+  const exportsCompatibilityReport = Boolean(
+    niz.device && !niz.deviceSupport?.canWrite,
+  )
+
   const handleLayerChange = (
     layer: number,
     direction?: 'previous' | 'next',
@@ -75,15 +84,26 @@ function App() {
         status={niz.status}
         device={niz.device}
         firmware={niz.firmware}
-        canExport={Boolean(niz.capture)}
+        supportLabel={niz.deviceSupport?.label ?? null}
+        canExport={exportsCompatibilityReport ? Boolean(niz.device) : Boolean(niz.capture)}
+        exportMode={exportsCompatibilityReport ? 'compatibility' : 'capture'}
         logCount={niz.logs.length}
-        canRefresh={!niz.recoveryRequired}
-        canVerifyWrite={Boolean(niz.capture && niz.device)}
+        canRefresh={Boolean(niz.deviceSupport?.canRead && !niz.recoveryRequired)}
+        canVerifyWrite={Boolean(
+          niz.capture && niz.device && niz.deviceSupport?.canWrite,
+        )}
         recoveryRequired={niz.recoveryRequired}
         onConnect={handleConnect}
+        onConnectCompatibility={handleCompatibilityConnect}
         onDisconnect={() => void niz.disconnect()}
         onRefresh={() => void niz.refresh()}
-        onExport={niz.exportCapture}
+        onExport={() => {
+          if (exportsCompatibilityReport) {
+            void niz.exportCompatibilityReport()
+          } else {
+            niz.exportCapture()
+          }
+        }}
         onVerifyWrite={() => setWriteDialogOpen(true)}
         onToggleDiagnostics={() => setDiagnosticsOpen((open) => !open)}
       />
@@ -93,8 +113,10 @@ function App() {
           <DeviceRail
             status={niz.status}
             device={niz.device}
+            support={niz.deviceSupport}
             firmware={niz.firmware}
             capture={niz.capture}
+            readVerification={niz.readVerification}
             keyCount={layout.keyCount}
           />
 
@@ -111,7 +133,6 @@ function App() {
                 <LayoutPicker
                   layout={layout}
                   selection={layoutSelection}
-                  source={resolvedLayout.source}
                   onChange={setLayoutSelection}
                 />
               </div>

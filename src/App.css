@@ -123,6 +123,7 @@
 }
 
 .status-dot--connecting,
+.status-dot--inspection-only,
 .status-dot--reading-version,
 .status-dot--reading-keymap,
 .status-dot--validating-write,
@@ -398,8 +399,7 @@
 
 .keymap-toolbar-actions,
 .layout-control,
-.layout-picker,
-.layout-source {
+.layout-picker {
   display: flex;
   align-items: center;
 }
@@ -449,32 +449,6 @@
 .layout-picker:focus-within {
   border-color: var(--blue);
   box-shadow: 0 0 0 2px rgba(45, 99, 162, 0.14);
-}
-
-.layout-source {
-  gap: 5px;
-  color: var(--ink-muted);
-  font-size: 9px;
-  font-weight: 650;
-  white-space: nowrap;
-}
-
-.layout-source i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #9ba19b;
-}
-
-.layout-source--device i,
-.layout-source--capture i {
-  background: var(--green);
-  box-shadow: 0 0 0 2px var(--green-soft);
-}
-
-.layout-source--manual i {
-  background: var(--blue);
-  box-shadow: 0 0 0 2px var(--blue-soft);
 }
 
 .layer-tabs {
@@ -996,6 +970,7 @@
 }
 
 .status-bar--connecting > div,
+.status-bar--inspection-only > div,
 .status-bar--reading-version > div,
 .status-bar--reading-keymap > div,
 .status-bar--validating-write > div,
@@ -1352,10 +1327,6 @@
 }
 
 @media (max-width: 1300px) {
-  .layout-source {
-    display: none;
-  }
-
   .keymap-toolbar-actions {
     gap: 8px;
   }

@@ -11,27 +11,39 @@ import type {
 } from '../domain/diagnostics'
 import { errorDetails } from '../domain/diagnostics'
 import { NizDeviceClient } from '../device/nizDeviceClient'
+import type { DeviceConnectionMode } from '../device/contracts'
 import {
   compareCompleteKeymapCaptures,
   validateCompleteKeymapCapture,
 } from '../device/keymapWriteGuard'
 import { WebHidTransport } from '../device/webHidTransport'
+import {
+  buildCompatibilityReport,
+  type CompatibilityReadVerification,
+} from '../device/compatibilityReport'
+import {
+  getNizDeviceSupport,
+  type NizDeviceSupport,
+} from '../device/nizDeviceModels'
 
 export interface NizDeviceState {
   status: DeviceStatus
   device: NizDeviceInfo | null
+  deviceSupport: NizDeviceSupport | null
   firmware: string | null
   capture: KeymapCapture | null
+  readVerification: CompatibilityReadVerification
   progressRecords: number
   progressTotal: number
   recoveryRequired: boolean
   error: string | null
   logs: DiagnosticLogEntry[]
-  connect(): Promise<void>
+  connect(mode?: DeviceConnectionMode): Promise<void>
   disconnect(): Promise<void>
   refresh(): Promise<void>
   verifyKeymapWrite(): Promise<boolean>
   exportCapture(): void
+  exportCompatibilityReport(): Promise<void>
   clearLogs(): void
 }
 
@@ -66,33 +78,102 @@ export function useNizDevice(): NizDeviceState {
     client.supported ? 'disconnected' : 'unsupported',
   )
   const [device, setDevice] = useState<NizDeviceInfo | null>(null)
+  const [deviceSupport, setDeviceSupport] = useState<NizDeviceSupport | null>(null)
   const [firmware, setFirmware] = useState<string | null>(null)
   const [capture, setCapture] = useState<KeymapCapture | null>(null)
+  const [readVerification, setReadVerification] = useState<CompatibilityReadVerification>({
+    attempts: 0,
+    consistent: null,
+  })
   const [progressRecords, setProgressRecords] = useState(0)
   const [progressTotal, setProgressTotal] = useState(0)
   const [recoveryRequired, setRecoveryRequired] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const readDevice = useCallback(async (): Promise<void> => {
+  const readDevice = useCallback(async (currentDevice: NizDeviceInfo): Promise<void> => {
+    const initialSupport = getNizDeviceSupport(currentDevice)
+    setDeviceSupport(initialSupport)
+    if (!initialSupport?.canRead) {
+      setReadVerification({ attempts: 0, consistent: null })
+      setProgressRecords(0)
+      setProgressTotal(0)
+      setStatus('inspection-only')
+      logger({
+        level: 'warn',
+        scope: 'protocol',
+        message: 'Device retained for metadata inspection; no protocol command was sent',
+        data: { reason: initialSupport?.reason ?? 'No device support profile' },
+      })
+      return
+    }
+
     setStatus('reading-version')
     const nextFirmware = await client.readVersion()
     setFirmware(nextFirmware)
     setProgressRecords(0)
     setProgressTotal(0)
     setStatus('reading-keymap')
-    const nextCapture = await client.readKeymap(({ records }) => {
+    let nextCapture = await client.readKeymap(({ records }) => {
       setProgressRecords(records)
     })
-    setCapture(nextCapture)
-    setStatus('ready')
-  }, [client])
+    let nextVerification: CompatibilityReadVerification = {
+      attempts: 1,
+      consistent: null,
+    }
+    setReadVerification(nextVerification)
 
-  const connect = useCallback(async (): Promise<void> => {
+    if (initialSupport.verification === 'read-candidate') {
+      validateCompleteKeymapCapture(nextCapture)
+      setCapture(nextCapture)
+      setDeviceSupport(getNizDeviceSupport(
+        currentDevice,
+        nextCapture.summary.maxPosition,
+      ))
+      setProgressRecords(0)
+      setProgressTotal(nextCapture.records.length)
+      setReadVerification({ attempts: 2, consistent: false })
+      logger({
+        level: 'info',
+        scope: 'protocol',
+        message: 'Repeating keymap read for candidate-device consistency check',
+        data: { baselineRecords: nextCapture.records.length },
+      })
+      const confirmationCapture = await client.readKeymap(({ records }) => {
+        setProgressRecords(records)
+      })
+      const comparison = compareCompleteKeymapCaptures(nextCapture, confirmationCapture)
+      if (comparison.mismatches.length > 0) {
+        throw new Error(
+          `Candidate device returned ${comparison.mismatches.length} inconsistent keymap records`,
+        )
+      }
+      nextCapture = confirmationCapture
+      nextVerification = { attempts: 2, consistent: true }
+      logger({
+        level: 'success',
+        scope: 'protocol',
+        message: 'Candidate-device keymap reads are consistent',
+        data: { records: comparison.recordCount, mismatches: 0 },
+      })
+    }
+
+    setDeviceSupport(getNizDeviceSupport(currentDevice, nextCapture.summary.maxPosition))
+    setCapture(nextCapture)
+    setReadVerification(nextVerification)
+    setStatus('ready')
+  }, [client, logger])
+
+  const connect = useCallback(async (
+    mode: DeviceConnectionMode = 'known',
+  ): Promise<void> => {
     logger({
       level: 'info',
       scope: 'ui',
-      message: 'Connect button activated',
+      message: mode === 'compatibility'
+        ? 'Compatibility discovery activated'
+        : 'Connect button activated',
       data: {
+        mode,
         secureContext: window.isSecureContext,
         origin: window.location.origin,
         documentVisibility: document.visibilityState,
@@ -100,11 +181,17 @@ export function useNizDevice(): NizDeviceState {
       },
     })
     setError(null)
+    setDevice(null)
+    setDeviceSupport(null)
+    setFirmware(null)
+    setCapture(null)
+    setReadVerification({ attempts: 0, consistent: null })
     setStatus('connecting')
     try {
-      const nextDevice = await client.connect()
+      const nextDevice = await client.connect(mode)
       setDevice(nextDevice)
-      await readDevice()
+      setDeviceSupport(getNizDeviceSupport(nextDevice))
+      await readDevice(nextDevice)
     } catch (cause) {
       logger({
         level: 'error',
@@ -120,8 +207,10 @@ export function useNizDevice(): NizDeviceState {
   const disconnect = useCallback(async (): Promise<void> => {
     await client.disconnect()
     setDevice(null)
+    setDeviceSupport(null)
     setFirmware(null)
     setCapture(null)
+    setReadVerification({ attempts: 0, consistent: null })
     setProgressRecords(0)
     setProgressTotal(0)
     setRecoveryRequired(false)
@@ -130,7 +219,7 @@ export function useNizDevice(): NizDeviceState {
   }, [client])
 
   const refresh = useCallback(async (): Promise<void> => {
-    if (!device) return
+    if (!device || !deviceSupport?.canRead) return
     if (recoveryRequired) {
       const message = 'Restore and verify the saved keymap before replacing the in-memory backup.'
       logger({ level: 'warn', scope: 'ui', message })
@@ -139,7 +228,7 @@ export function useNizDevice(): NizDeviceState {
     }
     setError(null)
     try {
-      await readDevice()
+      await readDevice(device)
     } catch (cause) {
       logger({
         level: 'error',
@@ -150,10 +239,16 @@ export function useNizDevice(): NizDeviceState {
       setError(cause instanceof Error ? cause.message : String(cause))
       setStatus('error')
     }
-  }, [device, logger, readDevice, recoveryRequired])
+  }, [device, deviceSupport?.canRead, logger, readDevice, recoveryRequired])
 
   const verifyKeymapWrite = useCallback(async (): Promise<boolean> => {
     if (!device || !capture) return false
+    if (!deviceSupport?.canWrite) {
+      const message = 'Keymap writing is disabled for this read-only device profile.'
+      logger({ level: 'warn', scope: 'ui', message })
+      setError(message)
+      return false
+    }
 
     const backup = capture
     let rewriteAttempted = false
@@ -242,20 +337,52 @@ export function useNizDevice(): NizDeviceState {
       setStatus('error')
       return false
     }
-  }, [capture, client, device, logger])
+  }, [capture, client, device, deviceSupport?.canWrite, logger])
 
-  const exportCapture = useCallback((): void => {
-    if (!capture) return
-    const blob = new Blob([JSON.stringify(capture, null, 2)], {
+  const downloadJson = useCallback((value: unknown, filename: string): void => {
+    const blob = new Blob([JSON.stringify(value, null, 2)], {
       type: 'application/json',
     })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `niz-${device?.productName ?? 'keyboard'}-${Date.now()}.json`
+    link.download = filename
     link.click()
     URL.revokeObjectURL(url)
-  }, [capture, device])
+  }, [])
+
+  const filenamePart = device?.productName
+    .trim()
+    .replace(/[^a-z0-9._-]+/gi, '-')
+    .replace(/^-+|-+$/g, '') || 'keyboard'
+
+  const exportCapture = useCallback((): void => {
+    if (!capture) return
+    downloadJson(capture, `niz-${filenamePart}-${Date.now()}.json`)
+  }, [capture, downloadJson, filenamePart])
+
+  const exportCompatibilityReport = useCallback(async (): Promise<void> => {
+    if (!device || !deviceSupport) return
+    const report = await buildCompatibilityReport({
+      device,
+      firmware,
+      support: deviceSupport,
+      capture,
+      verification: readVerification,
+    })
+    downloadJson(
+      report,
+      `niz-compatibility-${filenamePart}-${Date.now()}.json`,
+    )
+  }, [
+    capture,
+    device,
+    deviceSupport,
+    downloadJson,
+    filenamePart,
+    firmware,
+    readVerification,
+  ])
 
   const clearLogs = useCallback((): void => {
     setLogs([])
@@ -273,8 +400,10 @@ export function useNizDevice(): NizDeviceState {
   return {
     status,
     device,
+    deviceSupport,
     firmware,
     capture,
+    readVerification,
     progressRecords,
     progressTotal,
     recoveryRequired,
@@ -285,6 +414,7 @@ export function useNizDevice(): NizDeviceState {
     refresh,
     verifyKeymapWrite,
     exportCapture,
+    exportCompatibilityReport,
     clearLogs,
   }
 }

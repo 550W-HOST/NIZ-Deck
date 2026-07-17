@@ -1,24 +1,30 @@
-import { Activity, Cpu, Database, Usb } from 'lucide-react'
+import { Activity, Cpu, Database, ShieldCheck, Usb } from 'lucide-react'
 import type {
   DeviceStatus,
   KeymapCapture,
   NizDeviceInfo,
 } from '../domain/types'
 import { formatHex } from '../domain/formatters'
+import type { CompatibilityReadVerification } from '../device/compatibilityReport'
+import type { NizDeviceSupport } from '../device/nizDeviceModels'
 
 interface DeviceRailProps {
   status: DeviceStatus
   device: NizDeviceInfo | null
+  support: NizDeviceSupport | null
   firmware: string | null
   capture: KeymapCapture | null
+  readVerification: CompatibilityReadVerification
   keyCount: number
 }
 
 export function DeviceRail({
   status,
   device,
+  support,
   firmware,
   capture,
+  readVerification,
   keyCount,
 }: DeviceRailProps) {
   const usagePage = device?.collections[0]?.usagePage
@@ -44,6 +50,18 @@ export function DeviceRail({
             <dt>PID</dt>
             <dd>{device ? formatHex(device.productId) : '—'}</dd>
           </div>
+          <div>
+            <dt><ShieldCheck size={14} /> Access</dt>
+            <dd title={support?.reason}>
+              {support?.canWrite
+                ? 'Read/write'
+                : support?.canRead
+                  ? 'Read only'
+                  : support
+                    ? 'Metadata only'
+                    : '—'}
+            </dd>
+          </div>
         </dl>
       </section>
 
@@ -65,6 +83,16 @@ export function DeviceRail({
           <div>
             <dt>Layers</dt>
             <dd>{capture ? Object.keys(capture.summary.byLayer).length : 0}</dd>
+          </div>
+          <div>
+            <dt>Verification</dt>
+            <dd>
+              {readVerification.consistent === true
+                ? `${readVerification.attempts} reads match`
+                : readVerification.attempts > 0
+                  ? `${readVerification.attempts} read`
+                  : '—'}
+            </dd>
           </div>
         </dl>
       </section>

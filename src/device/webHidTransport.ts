@@ -1,11 +1,13 @@
 import type {
+  DeviceConnectionMode,
   HidReportListener,
   HidTransport,
 } from './contracts'
 import type { NizDeviceInfo } from '../domain/types'
+import type { DeviceCollectionSummary } from '../domain/types'
 import type { DiagnosticLogger } from '../domain/diagnostics'
 import { errorDetails } from '../domain/diagnostics'
-import { NIZ_REPORT_LENGTH } from '../protocol/nizProtocol'
+import { NIZ_COMMAND, NIZ_REPORT_LENGTH } from '../protocol/nizProtocol'
 import {
   NIZ_68_PRO_PRODUCT_ID,
   NIZ_84_EC_PRODUCT_ID,
@@ -24,10 +26,25 @@ export const NIZ_84_EC_FILTER: HIDDeviceFilter = {
   productId: NIZ_84_EC_PRODUCT_ID,
 }
 
+export const NIZ_COMPATIBILITY_FILTER: HIDDeviceFilter = {
+  vendorId: NIZ_VENDOR_ID,
+}
+
 export const NIZ_DEVICE_FILTERS: readonly HIDDeviceFilter[] = [
   NIZ_68_PRO_FILTER,
   NIZ_84_EC_FILTER,
 ]
+
+export function summarizeHidCollections(
+  collections: readonly HIDCollectionInfo[],
+): DeviceCollectionSummary[] {
+  return collections.flatMap((collection) => [{
+    usagePage: collection.usagePage,
+    usage: collection.usage,
+    inputReportIds: collection.inputReports.map((report) => report.reportId),
+    outputReportIds: collection.outputReports.map((report) => report.reportId),
+  }, ...summarizeHidCollections(collection.children)])
+}
 
 export class WebHidTransport implements HidTransport {
   readonly supported = 'hid' in navigator
@@ -53,7 +70,7 @@ export class WebHidTransport implements HidTransport {
     return this.device?.opened ?? false
   }
 
-  async connect(): Promise<NizDeviceInfo> {
+  async connect(mode: DeviceConnectionMode = 'known'): Promise<NizDeviceInfo> {
     if (!this.supported) throw new Error('WebHID is not supported by this browser')
 
     if (!window.isSecureContext) {
@@ -66,16 +83,19 @@ export class WebHidTransport implements HidTransport {
       throw new Error('WebHID requires HTTPS or localhost')
     }
 
+    const filters = mode === 'compatibility'
+      ? [NIZ_COMPATIBILITY_FILTER]
+      : [...NIZ_DEVICE_FILTERS]
     this.logger({
       level: 'info',
       scope: 'transport',
       message: 'Opening WebHID device picker',
-      data: { filters: NIZ_DEVICE_FILTERS },
+      data: { mode, filters },
     })
     let devices: HIDDevice[]
     try {
       devices = await navigator.hid.requestDevice({
-        filters: [...NIZ_DEVICE_FILTERS],
+        filters,
       })
     } catch (error) {
       this.logger({
@@ -145,11 +165,21 @@ export class WebHidTransport implements HidTransport {
     if (bytes.byteLength !== NIZ_REPORT_LENGTH) {
       throw new RangeError(`Expected a ${NIZ_REPORT_LENGTH}-byte NIZ report`)
     }
+    const command = bytes[1]
     this.logger({
       level: 'debug',
       scope: 'transport',
-      message: `TX 0x${bytes[1]?.toString(16).padStart(2, '0').toUpperCase()}`,
-      data: { reportId: 0, length: bytes.byteLength, head: Array.from(bytes.slice(0, 12)) },
+      message: `TX 0x${command?.toString(16).padStart(2, '0').toUpperCase()}`,
+      data: command === NIZ_COMMAND.KEY_DATA
+        ? {
+            reportId: 0,
+            length: bytes.byteLength,
+            layer: bytes[2],
+            position: bytes[3],
+            functionType: bytes[4],
+            payload: 'redacted',
+          }
+        : { reportId: 0, length: bytes.byteLength, head: Array.from(bytes.slice(0, 12)) },
     })
     try {
       await this.device.sendReport(0, bytes)
@@ -175,11 +205,21 @@ export class WebHidTransport implements HidTransport {
       event.data.byteOffset,
       event.data.byteLength,
     ))
+    const command = bytes[1]
     this.logger({
       level: 'debug',
       scope: 'transport',
-      message: `RX 0x${bytes[1]?.toString(16).padStart(2, '0').toUpperCase()}`,
-      data: { reportId: event.reportId, length: bytes.length, head: bytes.slice(0, 12) },
+      message: `RX 0x${command?.toString(16).padStart(2, '0').toUpperCase()}`,
+      data: command === NIZ_COMMAND.KEY_DATA
+        ? {
+            reportId: event.reportId,
+            length: bytes.length,
+            layer: bytes[2],
+            position: bytes[3],
+            functionType: bytes[4],
+            payload: 'redacted',
+          }
+        : { reportId: event.reportId, length: bytes.length, head: bytes.slice(0, 12) },
     })
     for (const listener of this.listeners) {
       listener({ reportId: event.reportId, bytes })
@@ -191,12 +231,7 @@ export class WebHidTransport implements HidTransport {
       productName: device.productName,
       vendorId: device.vendorId,
       productId: device.productId,
-      collections: device.collections.map((collection) => ({
-        usagePage: collection.usagePage,
-        usage: collection.usage,
-        inputReportIds: collection.inputReports.map((report) => report.reportId),
-        outputReportIds: collection.outputReports.map((report) => report.reportId),
-      })),
+      collections: summarizeHidCollections(device.collections),
     }
   }
 }

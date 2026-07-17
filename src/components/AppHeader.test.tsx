@@ -1,0 +1,65 @@
+import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, expect, it, vi } from 'vitest'
+import { AppHeader } from './AppHeader'
+
+const handlers = {
+  onConnect: vi.fn(),
+  onConnectCompatibility: vi.fn(),
+  onDisconnect: vi.fn(),
+  onRefresh: vi.fn(),
+  onExport: vi.fn(),
+  onVerifyWrite: vi.fn(),
+  onToggleDiagnostics: vi.fn(),
+}
+
+describe('AppHeader compatibility controls', () => {
+  it('offers unknown-device discovery separately from normal connection', () => {
+    const markup = renderToStaticMarkup(
+      <AppHeader
+        status="disconnected"
+        device={null}
+        firmware={null}
+        supportLabel={null}
+        canExport={false}
+        exportMode="capture"
+        logCount={0}
+        canRefresh={false}
+        canVerifyWrite={false}
+        recoveryRequired={false}
+        {...handlers}
+      />,
+    )
+
+    expect(markup).toContain('aria-label="Detect unknown device"')
+    expect(markup).toContain('aria-label="Connect keyboard"')
+  })
+
+  it('labels the redacted report export and keeps writing disabled', () => {
+    const markup = renderToStaticMarkup(
+      <AppHeader
+        status="ready"
+        device={{
+          productName: '87EC(S)BLe',
+          vendorId: 0x0483,
+          productId: 0x9001,
+          collections: [],
+        }}
+        firmware="test"
+        supportLabel="Candidate read only"
+        canExport
+        exportMode="compatibility"
+        logCount={0}
+        canRefresh
+        canVerifyWrite={false}
+        recoveryRequired={false}
+        {...handlers}
+      />,
+    )
+
+    expect(markup).toContain('aria-label="Export compatibility report"')
+    expect(markup).toMatch(
+      /<button(?=[^>]*disabled="")(?=[^>]*aria-label="Verify keymap write")[^>]*>/,
+    )
+    expect(markup).not.toContain('aria-label="Detect unknown device"')
+  })
+})

@@ -1,4 +1,5 @@
 import type {
+  DeviceConnectionMode,
   HidReport,
   HidTransport,
   NizDeviceReader,
@@ -24,6 +25,7 @@ import {
   encodeKeymapCommit,
   validateCompleteKeymapCapture,
 } from './keymapWriteGuard'
+import { getNizDeviceSupport } from './nizDeviceModels'
 
 interface Collector<T> {
   label: string
@@ -56,9 +58,9 @@ export class NizDeviceClient implements NizDeviceReader, NizDeviceWriter {
     return this.transport.supported
   }
 
-  async connect(): Promise<NizDeviceInfo> {
+  async connect(mode: DeviceConnectionMode = 'known'): Promise<NizDeviceInfo> {
     this.logger({ level: 'info', scope: 'protocol', message: 'Connecting device client' })
-    this.deviceInfo = await this.transport.connect()
+    this.deviceInfo = await this.transport.connect(mode)
     this.logger({
       level: 'debug',
       scope: 'protocol',
@@ -82,6 +84,7 @@ export class NizDeviceClient implements NizDeviceReader, NizDeviceWriter {
   }
 
   async readVersion(): Promise<string> {
+    this.assertReadableDevice()
     this.logger({ level: 'info', scope: 'protocol', message: 'Reading firmware version' })
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       this.logger({
@@ -142,7 +145,7 @@ export class NizDeviceClient implements NizDeviceReader, NizDeviceWriter {
   async readKeymap(
     onProgress?: (progress: ReadProgress) => void,
   ): Promise<KeymapCapture> {
-    if (!this.deviceInfo) throw new Error('Keyboard is not connected')
+    this.assertReadableDevice()
 
     this.logger({ level: 'info', scope: 'protocol', message: 'Reading complete keymap' })
 
@@ -213,6 +216,10 @@ export class NizDeviceClient implements NizDeviceReader, NizDeviceWriter {
     }
     if (!this.firmware || capture.firmware !== this.firmware) {
       throw new Error('The keymap backup firmware does not match the connected keyboard')
+    }
+    const support = getNizDeviceSupport(this.deviceInfo, capture.summary.maxPosition)
+    if (!support?.canWrite) {
+      throw new Error('Keymap writing is disabled for devices without a hardware-verified write profile')
     }
 
     const records = validateCompleteKeymapCapture(capture)
@@ -345,6 +352,18 @@ export class NizDeviceClient implements NizDeviceReader, NizDeviceWriter {
     }
     this.activeCollector = collector as Collector<unknown>
     return collector
+  }
+
+  private assertReadableDevice(): void {
+    if (!this.deviceInfo || !this.transport.connected) {
+      throw new Error('Keyboard is not connected')
+    }
+    const support = getNizDeviceSupport(this.deviceInfo)
+    if (!support?.canRead) {
+      throw new Error(
+        'No NiZ-compatible programming interface was identified; no protocol command was sent',
+      )
+    }
   }
 
   private async sendAndCollect<T>(command: number, collector: Collector<T>): Promise<T> {

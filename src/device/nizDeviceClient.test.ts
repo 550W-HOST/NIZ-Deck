@@ -174,47 +174,50 @@ describe('NizDeviceClient', () => {
     client.dispose()
   })
 
-  it('writes an 84-key capture using F1, 252 F0 reports, then F6', async () => {
+  it('blocks writes to the read-only 84EC profile before sending F1', async () => {
     const transport = new FakeTransport(deviceInfo84, firmware84)
     const client = new NizDeviceClient(transport)
     await client.connect()
     await client.readVersion()
     transport.sentReports.length = 0
 
-    await client.writeKeymap(completeCapture(84, deviceInfo84, firmware84))
+    await expect(client.writeKeymap(
+      completeCapture(84, deviceInfo84, firmware84),
+    )).rejects.toThrow('hardware-verified write profile')
 
-    expect(transport.sentReports).toHaveLength(254)
-    expect(packetType(transport.sentReports[0]!)).toBe(NIZ_COMMAND.WRITE_KEYMAP)
-    expect(transport.sentReports.slice(1, -1)).toHaveLength(252)
-    expect(transport.sentReports.slice(1, -1).every((report) => (
-      packetType(report) === NIZ_COMMAND.KEY_DATA
-    ))).toBe(true)
-    expect(transport.sentReports.at(-1)?.slice(1).every((byte) => (
-      byte === NIZ_COMMAND.DATA_END
-    ))).toBe(true)
+    expect(transport.sentReports).toHaveLength(0)
 
     await client.disconnect()
     client.dispose()
   })
 
-  it('writes an 87-key capture using F1, 261 F0 reports, then F6', async () => {
+  it('blocks writes to an unknown 87-key candidate before sending F1', async () => {
     const transport = new FakeTransport(deviceInfo87, firmware87)
     const client = new NizDeviceClient(transport)
     await client.connect()
     await client.readVersion()
     transport.sentReports.length = 0
 
-    await client.writeKeymap(completeCapture(87, deviceInfo87, firmware87))
+    await expect(client.writeKeymap(
+      completeCapture(87, deviceInfo87, firmware87),
+    )).rejects.toThrow('hardware-verified write profile')
 
-    expect(transport.sentReports).toHaveLength(263)
-    expect(packetType(transport.sentReports[0]!)).toBe(NIZ_COMMAND.WRITE_KEYMAP)
-    expect(transport.sentReports.slice(1, -1)).toHaveLength(261)
-    expect(transport.sentReports.slice(1, -1).every((report) => (
-      packetType(report) === NIZ_COMMAND.KEY_DATA
-    ))).toBe(true)
-    expect(transport.sentReports.at(-1)?.slice(1).every((byte) => (
-      byte === NIZ_COMMAND.DATA_END
-    ))).toBe(true)
+    expect(transport.sentReports).toHaveLength(0)
+
+    await client.disconnect()
+    client.dispose()
+  })
+
+  it('does not send probe commands to unrelated devices selected in compatibility mode', async () => {
+    const transport = new FakeTransport({
+      ...deviceInfo87,
+      productName: 'STM32 bootloader',
+    })
+    const client = new NizDeviceClient(transport)
+    await client.connect('compatibility')
+
+    await expect(client.readVersion()).rejects.toThrow('no protocol command was sent')
+    expect(transport.sentReports).toHaveLength(0)
 
     await client.disconnect()
     client.dispose()

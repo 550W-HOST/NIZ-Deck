@@ -2,6 +2,7 @@ export type DeviceStatus =
   | 'unsupported'
   | 'disconnected'
   | 'connecting'
+  | 'inspection-only'
   | 'reading-version'
   | 'reading-keymap'
   | 'validating-write'

@@ -12,6 +12,7 @@ const statusText: Record<DeviceStatus, string> = {
   unsupported: 'WebHID unavailable',
   disconnected: 'Disconnected',
   connecting: 'Waiting for device',
+  'inspection-only': 'Metadata only · no protocol commands sent',
   'reading-version': 'Reading firmware',
   'reading-keymap': 'Reading keymap',
   'validating-write': 'Checking keymap backup',

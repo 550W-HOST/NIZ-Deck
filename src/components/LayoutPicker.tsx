@@ -1,29 +1,16 @@
 import { ChevronDown, LayoutGrid } from 'lucide-react'
 import { KEYBOARD_LAYOUTS } from '../data/keyboardLayouts'
-import type {
-  KeyboardLayout,
-  LayoutSelection,
-  LayoutSource,
-} from '../domain/keyboardLayout'
+import type { KeyboardLayout, LayoutSelection } from '../domain/keyboardLayout'
 
 interface LayoutPickerProps {
   layout: KeyboardLayout
   selection: LayoutSelection
-  source: LayoutSource
   onChange(selection: LayoutSelection): void
-}
-
-const sourceLabels: Record<LayoutSource, string> = {
-  device: 'Device matched',
-  capture: 'Capture matched',
-  manual: 'Manual',
-  fallback: 'Preview',
 }
 
 export function LayoutPicker({
   layout,
   selection,
-  source,
   onChange,
 }: LayoutPickerProps) {
   return (
@@ -43,10 +30,6 @@ export function LayoutPicker({
         </select>
         <ChevronDown size={13} aria-hidden="true" />
       </label>
-      <span className={`layout-source layout-source--${source}`}>
-        <i aria-hidden="true" />
-        {sourceLabels[source]}
-      </span>
     </div>
   )
 }
