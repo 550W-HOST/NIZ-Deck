@@ -36,8 +36,21 @@ const deviceInfo84: NizDeviceInfo = {
   }],
 }
 
+const deviceInfo87: NizDeviceInfo = {
+  productName: '87EC(S)BLe',
+  vendorId: 0x0483,
+  productId: 0xffff,
+  collections: [{
+    usagePage: 0xff00,
+    usage: 1,
+    inputReportIds: [0],
+    outputReportIds: [0],
+  }],
+}
+
 const firmware68 = '68pro(S)BT;V1.0.3H;V2.0;'
 const firmware84 = '84EC(S)BLe;test;'
+const firmware87 = '87EC(S)BLe;test;'
 
 class FakeTransport implements HidTransport {
   readonly supported = true
@@ -92,7 +105,7 @@ class FakeTransport implements HidTransport {
 }
 
 function completeCapture(
-  keyCount: 68 | 84 = 68,
+  keyCount: 68 | 84 | 87 = 68,
   device = deviceInfo,
   firmware = firmware68,
 ): KeymapCapture {
@@ -173,6 +186,29 @@ describe('NizDeviceClient', () => {
     expect(transport.sentReports).toHaveLength(254)
     expect(packetType(transport.sentReports[0]!)).toBe(NIZ_COMMAND.WRITE_KEYMAP)
     expect(transport.sentReports.slice(1, -1)).toHaveLength(252)
+    expect(transport.sentReports.slice(1, -1).every((report) => (
+      packetType(report) === NIZ_COMMAND.KEY_DATA
+    ))).toBe(true)
+    expect(transport.sentReports.at(-1)?.slice(1).every((byte) => (
+      byte === NIZ_COMMAND.DATA_END
+    ))).toBe(true)
+
+    await client.disconnect()
+    client.dispose()
+  })
+
+  it('writes an 87-key capture using F1, 261 F0 reports, then F6', async () => {
+    const transport = new FakeTransport(deviceInfo87, firmware87)
+    const client = new NizDeviceClient(transport)
+    await client.connect()
+    await client.readVersion()
+    transport.sentReports.length = 0
+
+    await client.writeKeymap(completeCapture(87, deviceInfo87, firmware87))
+
+    expect(transport.sentReports).toHaveLength(263)
+    expect(packetType(transport.sentReports[0]!)).toBe(NIZ_COMMAND.WRITE_KEYMAP)
+    expect(transport.sentReports.slice(1, -1)).toHaveLength(261)
     expect(transport.sentReports.slice(1, -1).every((report) => (
       packetType(report) === NIZ_COMMAND.KEY_DATA
     ))).toBe(true)

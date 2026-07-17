@@ -1,6 +1,6 @@
 # NIZ Deck
 
-Community WebHID configurator for NIZ 68 Pro and 84EC keyboards, built with React and TypeScript.
+Community WebHID configurator with physical-layout support for NIZ 68 Pro, 84EC, and 87-key ANSI keyboards, built with React and TypeScript.
 
 NIZ Deck is an independent community project and is not affiliated with NiZ.
 
@@ -22,7 +22,8 @@ bun run build
 - Read firmware version (`0xF9`)
 - Capture the complete keymap (`0xF2`, `0xF0`, `0xF6`)
 - Inspect Base, Right Fn, and Left Fn layers
-- Render either the 68-key or 84-key physical layout from the device or capture
+- Render the 68-key, 84-key, or 87-key ANSI physical layout from the device or capture, with manual selection available
+- Recognize 87-key devices by product name; the WebHID picker remains limited to confirmed 68 Pro and 84EC product IDs
 - Export a versioned JSON capture containing raw and parsed reports
 - Rewrite the unchanged complete capture only after a second matching read, then verify a complete read-back
 

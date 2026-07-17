@@ -5,7 +5,7 @@ export const NIZ_68_PRO_PRODUCT_ID = 0x5532
 export const NIZ_84_EC_PRODUCT_ID = 0x5129
 export const NIZ_66_PRODUCT_ID = 0x512a
 
-export const NIZ_SUPPORTED_KEY_COUNTS = [68, 84] as const
+export const NIZ_SUPPORTED_KEY_COUNTS = [68, 84, 87] as const
 export type NizSupportedKeyCount = (typeof NIZ_SUPPORTED_KEY_COUNTS)[number]
 
 export function isSupportedNizKeyCount(
@@ -35,6 +35,7 @@ export function detectNizDeviceKeyCount(
   }
 
   const productName = device.productName.trim().toLowerCase()
+  if (/(?:^|[^0-9])x?87(?:ec)?(?:[^0-9]|$)/i.test(productName)) return 87
   if (/(?:^|[^0-9])84(?:ec)?(?:[^0-9]|$)/i.test(productName)) return 84
   if (/(?:^|[^0-9])68\s*pro(?:[^0-9]|$)/i.test(productName)) return 68
 

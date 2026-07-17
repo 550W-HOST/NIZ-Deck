@@ -25,6 +25,13 @@ const device84: NizDeviceInfo = {
   collections: [],
 }
 
+const device87: NizDeviceInfo = {
+  productName: '87EC(S)BLe',
+  vendorId: 0x0483,
+  productId: 0xffff,
+  collections: [],
+}
+
 const device66: NizDeviceInfo = {
   productName: '66EC',
   vendorId: 0x0483,
@@ -49,7 +56,7 @@ function makeCapture({
   device = device68,
 }: {
   layerCount?: number
-  keyCount?: 68 | 84
+  keyCount?: 68 | 84 | 87
   device?: NizDeviceInfo
 } = {}): KeymapCapture {
   const records = Array.from({ length: layerCount }, (_, layerIndex) => (
@@ -105,6 +112,16 @@ describe('complete keymap write guard', () => {
     expect(records).toHaveLength(252)
     expect(records[0]).toMatchObject({ layer: 1, position: 1 })
     expect(records.at(-1)).toMatchObject({ layer: 3, position: 84 })
+  })
+
+  it('accepts and orders a complete 87-key capture', () => {
+    const capture = makeCapture({ keyCount: 87, device: device87 })
+    capture.records.reverse()
+
+    const records = validateCompleteKeymapCapture(capture)
+    expect(records).toHaveLength(261)
+    expect(records[0]).toMatchObject({ layer: 1, position: 1 })
+    expect(records.at(-1)).toMatchObject({ layer: 3, position: 87 })
   })
 
   it('rejects truncated 84-key and known 66-key captures', () => {

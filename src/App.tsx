@@ -8,7 +8,6 @@ import { KeyInspector } from './components/KeyInspector'
 import { LayoutPicker } from './components/LayoutPicker'
 import { StatusBar } from './components/StatusBar'
 import { WriteVerificationDialog } from './components/WriteVerificationDialog'
-import { layerName } from './domain/formatters'
 import type { LayoutSelection } from './domain/keyboardLayout'
 import { physicalKeyAt, resolveKeyboardLayout } from './data/keyboardLayouts'
 import { useNizDevice } from './hooks/useNizDevice'
@@ -16,6 +15,9 @@ import { useNizDevice } from './hooks/useNizDevice'
 function App() {
   const niz = useNizDevice()
   const [activeLayer, setActiveLayer] = useState(1)
+  const [layerTransitionDirection, setLayerTransitionDirection] = useState<
+    'previous' | 'next'
+  >('next')
   const [selectedPosition, setSelectedPosition] = useState(1)
   const [layoutSelection, setLayoutSelection] = useState<LayoutSelection>('auto')
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
@@ -56,6 +58,15 @@ function App() {
   const handleConnect = (): void => {
     setDiagnosticsOpen(true)
     void niz.connect()
+  }
+
+  const handleLayerChange = (
+    layer: number,
+    direction?: 'previous' | 'next',
+  ): void => {
+    if (layer === activeLayer) return
+    setLayerTransitionDirection(direction ?? (layer < activeLayer ? 'previous' : 'next'))
+    setActiveLayer(layer)
   }
 
   return (
@@ -103,27 +114,17 @@ function App() {
                   source={resolvedLayout.source}
                   onChange={setLayoutSelection}
                 />
-                <div className="layer-tabs" role="tablist" aria-label="Keymap layers">
-                  {layers.map((layer) => (
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={activeLayer === layer}
-                      className={activeLayer === layer ? 'is-active' : ''}
-                      key={layer}
-                      onClick={() => setActiveLayer(layer)}
-                    >
-                      {layerName(layer)}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
 
             <KeyboardBoard
               layout={layout}
               records={activeRecords}
+              layers={layers}
+              activeLayer={activeLayer}
+              transitionDirection={layerTransitionDirection}
               selectedPosition={selectedPosition}
+              onLayerChange={handleLayerChange}
               onSelect={setSelectedPosition}
             />
           </main>

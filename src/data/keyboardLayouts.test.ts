@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { NIZ_68_LAYOUT } from './layout68'
 import { NIZ_84_LAYOUT } from './layout84'
+import { NIZ_87_LAYOUT } from './layout87'
 import {
   KEYBOARD_LAYOUTS,
   detectKeyboardLayout,
@@ -20,6 +21,13 @@ const niz84Device: NizDeviceInfo = {
   productName: '84EC(S)BLe',
   vendorId: 0x0483,
   productId: 0x5129,
+  collections: [],
+}
+
+const niz87Device: NizDeviceInfo = {
+  productName: '87EC(S)BLe',
+  vendorId: 0x0483,
+  productId: 0xffff,
   collections: [],
 }
 
@@ -48,8 +56,8 @@ function captureWithMaxPosition(maxPosition: number): KeymapCapture {
 }
 
 describe('keyboard layout resolution', () => {
-  it('registers both supported physical layouts', () => {
-    expect(KEYBOARD_LAYOUTS.map(({ keyCount }) => keyCount)).toEqual([68, 84])
+  it('registers all supported physical layouts', () => {
+    expect(KEYBOARD_LAYOUTS.map(({ keyCount }) => keyCount)).toEqual([68, 84, 87])
   })
 
   it('detects the connected NIZ 68pro by product name', () => {
@@ -63,12 +71,12 @@ describe('keyboard layout resolution', () => {
   })
 
   it('allows the layout to be selected manually', () => {
-    const result = resolveKeyboardLayout(NIZ_84_LAYOUT.id, {
+    const result = resolveKeyboardLayout(NIZ_87_LAYOUT.id, {
       device: null,
       capture: null,
     })
 
-    expect(result.layout).toBe(NIZ_84_LAYOUT)
+    expect(result.layout).toBe(NIZ_87_LAYOUT)
     expect(result.source).toBe('manual')
   })
 
@@ -95,6 +103,25 @@ describe('keyboard layout resolution', () => {
     expect(result).toEqual({ layout: NIZ_84_LAYOUT, source: 'capture' })
   })
 
+  it('detects an 87-key layout by product name or completed capture', () => {
+    const byName = ['NIZ 87', '87EC(S)BLe', 'NIZ X87 RGB'].map((productName) => (
+      resolveKeyboardLayout('auto', {
+        device: { ...niz87Device, productName },
+        capture: null,
+      })
+    ))
+    const byCapture = resolveKeyboardLayout('auto', {
+      device: null,
+      capture: captureWithMaxPosition(87),
+    })
+
+    expect(byName).toEqual(Array.from({ length: 3 }, () => ({
+      layout: NIZ_87_LAYOUT,
+      source: 'device',
+    })))
+    expect(byCapture).toEqual({ layout: NIZ_87_LAYOUT, source: 'capture' })
+  })
+
   it('does not classify the known 0x512A 66-key model as 84', () => {
     const result = detectKeyboardLayout({
       device: { ...niz84Device, productId: 0x512a },
@@ -108,5 +135,6 @@ describe('keyboard layout resolution', () => {
     expect(physicalKeyAt(NIZ_68_LAYOUT, 68)?.label).toBe('→')
     expect(physicalKeyAt(NIZ_68_LAYOUT, 69)).toBeUndefined()
     expect(physicalKeyAt(NIZ_84_LAYOUT, 84)?.label).toBe('→')
+    expect(physicalKeyAt(NIZ_87_LAYOUT, 87)?.label).toBe('→')
   })
 })

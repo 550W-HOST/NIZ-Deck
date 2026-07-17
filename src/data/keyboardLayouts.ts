@@ -10,10 +10,12 @@ import {
 } from '../device/nizDeviceModels'
 import { NIZ_68_LAYOUT } from './layout68'
 import { NIZ_84_LAYOUT } from './layout84'
+import { NIZ_87_LAYOUT } from './layout87'
 
 export const KEYBOARD_LAYOUTS: readonly KeyboardLayout[] = [
   NIZ_68_LAYOUT,
   NIZ_84_LAYOUT,
+  NIZ_87_LAYOUT,
 ]
 
 function findLayout(id: string): KeyboardLayout | undefined {

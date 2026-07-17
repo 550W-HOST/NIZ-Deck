@@ -36,7 +36,7 @@ function captureKeyCount(capture: KeymapCapture): number {
   }
 
   if (!isSupportedNizKeyCount(capture.summary.maxPosition)) {
-    throw new Error('Expected a supported 68- or 84-key capture')
+    throw new Error('Expected a supported 68-, 84-, or 87-key capture')
   }
   return capture.summary.maxPosition
 }
