@@ -117,7 +117,6 @@ export function KeyboardBoard({
                       {assignmentText && (
                         <span className="kle-key-assignment">{assignmentText}</span>
                       )}
-                      <span className="kle-key-position">{key.position}</span>
                     </span>
                   </button>
                 </div>

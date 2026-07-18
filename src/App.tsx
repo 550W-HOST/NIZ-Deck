@@ -44,6 +44,16 @@ function App() {
   const selectedRecord = activeRecords.find(
     (record) => record.position === selectedPosition,
   )
+  const showsDeviceRail = Boolean(niz.device || niz.capture)
+  const showsKeyInspector = Boolean(niz.capture)
+  const diagnosticAlertCount = niz.logs.filter(
+    (entry) => entry.level === 'warn' || entry.level === 'error',
+  ).length
+  const workspaceClassName = [
+    'workspace',
+    showsDeviceRail ? '' : 'workspace--no-device-rail',
+    showsKeyInspector ? '' : 'workspace--no-inspector',
+  ].filter(Boolean).join(' ')
 
   useEffect(() => {
     if (!physicalKeyAt(layout, selectedPosition)) {
@@ -83,11 +93,9 @@ function App() {
       <AppHeader
         status={niz.status}
         device={niz.device}
-        firmware={niz.firmware}
-        supportLabel={niz.deviceSupport?.label ?? null}
         canExport={exportsCompatibilityReport ? Boolean(niz.device) : Boolean(niz.capture)}
         exportMode={exportsCompatibilityReport ? 'compatibility' : 'capture'}
-        logCount={niz.logs.length}
+        diagnosticAlertCount={diagnosticAlertCount}
         canRefresh={Boolean(niz.deviceSupport?.canRead && !niz.recoveryRequired)}
         canVerifyWrite={Boolean(
           niz.capture && niz.device && niz.deviceSupport?.canWrite,
@@ -109,24 +117,21 @@ function App() {
       />
 
       <div className="content-stack">
-        <div className="workspace">
-          <DeviceRail
-            device={niz.device}
-            support={niz.deviceSupport}
-            firmware={niz.firmware}
-            capture={niz.capture}
-            readVerification={niz.readVerification}
-            keyCount={layout.keyCount}
-          />
+        <div className={workspaceClassName}>
+          {showsDeviceRail && (
+            <DeviceRail
+              device={niz.device}
+              support={niz.deviceSupport}
+              firmware={niz.firmware}
+              capture={niz.capture}
+              readVerification={niz.readVerification}
+            />
+          )}
 
           <main className="keymap-workspace">
             <div className="keymap-toolbar">
               <div className="keymap-title">
-                <span className="toolbar-eyebrow">Keymap</span>
-                <div>
-                  <h1>{niz.device?.productName ?? layout.name}</h1>
-                  <span>{layout.keyCount} keys</span>
-                </div>
+                <h1>{niz.device?.productName ?? 'Keymap'}</h1>
               </div>
               <div className="keymap-toolbar-actions">
                 <LayoutPicker
@@ -149,11 +154,13 @@ function App() {
             />
           </main>
 
-          <KeyInspector
-            physicalKey={physicalKeyAt(layout, selectedPosition)}
-            record={selectedRecord}
-            activeLayer={activeLayer}
-          />
+          {showsKeyInspector && (
+            <KeyInspector
+              physicalKey={physicalKeyAt(layout, selectedPosition)}
+              record={selectedRecord}
+              activeLayer={activeLayer}
+            />
+          )}
         </div>
 
         <DiagnosticsPanel

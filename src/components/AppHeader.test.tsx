@@ -18,11 +18,9 @@ describe('AppHeader compatibility controls', () => {
       <AppHeader
         status="disconnected"
         device={null}
-        firmware={null}
-        supportLabel={null}
         canExport={false}
         exportMode="capture"
-        logCount={0}
+        diagnosticAlertCount={0}
         canRefresh={false}
         canVerifyWrite={false}
         recoveryRequired={false}
@@ -44,11 +42,9 @@ describe('AppHeader compatibility controls', () => {
           productId: 0x9001,
           collections: [],
         }}
-        firmware="test"
-        supportLabel="Candidate read only"
         canExport
         exportMode="compatibility"
-        logCount={0}
+        diagnosticAlertCount={0}
         canRefresh
         canVerifyWrite={false}
         recoveryRequired={false}
@@ -61,5 +57,24 @@ describe('AppHeader compatibility controls', () => {
       /<button(?=[^>]*disabled="")(?=[^>]*aria-label="Verify keymap write")[^>]*>/,
     )
     expect(markup).not.toContain('aria-label="Detect unknown device"')
+  })
+
+  it('renders an actionable diagnostics count without a brand subtitle', () => {
+    const markup = renderToStaticMarkup(
+      <AppHeader
+        status="disconnected"
+        device={null}
+        canExport={false}
+        exportMode="capture"
+        diagnosticAlertCount={3}
+        canRefresh={false}
+        canVerifyWrite={false}
+        recoveryRequired={false}
+        {...handlers}
+      />,
+    )
+
+    expect(markup).toContain('<span>3</span>')
+    expect(markup).not.toContain('Community Web Configurator')
   })
 })

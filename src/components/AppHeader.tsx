@@ -14,11 +14,9 @@ import type { DeviceStatus, NizDeviceInfo } from '../domain/types'
 interface AppHeaderProps {
   status: DeviceStatus
   device: NizDeviceInfo | null
-  firmware: string | null
-  supportLabel: string | null
   canExport: boolean
   exportMode: 'capture' | 'compatibility'
-  logCount: number
+  diagnosticAlertCount: number
   canRefresh: boolean
   canVerifyWrite: boolean
   recoveryRequired: boolean
@@ -43,11 +41,9 @@ const busyStatuses: DeviceStatus[] = [
 export function AppHeader({
   status,
   device,
-  firmware,
-  supportLabel,
   canExport,
   exportMode,
-  logCount,
+  diagnosticAlertCount,
   canRefresh,
   canVerifyWrite,
   recoveryRequired,
@@ -67,18 +63,7 @@ export function AppHeader({
         <span className="brand-mark" aria-hidden="true">
           <Keyboard size={18} strokeWidth={2.2} />
         </span>
-        <div>
-          <strong>NIZ Deck</strong>
-          <span>Community Web Configurator</span>
-        </div>
-      </div>
-
-      <div className="header-device-state">
-        <span className={`status-dot status-dot--${status}`} aria-hidden="true" />
-        <div>
-          <strong>{device?.productName ?? 'No device'}</strong>
-          <span>{firmware ?? (device ? supportLabel ?? 'Connected' : 'Not connected')}</span>
-        </div>
+        <strong>NIZ Deck</strong>
       </div>
 
       <div className="header-actions">
@@ -90,7 +75,9 @@ export function AppHeader({
           title="Open diagnostics"
         >
           <SquareTerminal size={17} />
-          {logCount > 0 && <span>{Math.min(logCount, 99)}</span>}
+          {diagnosticAlertCount > 0 && (
+            <span>{Math.min(diagnosticAlertCount, 99)}</span>
+          )}
         </button>
         {device && (
           <>

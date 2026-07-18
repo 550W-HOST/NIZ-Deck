@@ -55,7 +55,6 @@ export function StatusBar({
           </strong>
         )}
       </div>
-      <span>WebHID · Report ID 0 · 64 bytes</span>
     </footer>
   )
 }

@@ -1,4 +1,4 @@
-import { Binary, KeyRound, LockKeyhole } from 'lucide-react'
+import { Binary, ChevronRight, KeyRound } from 'lucide-react'
 import type { KeymapRecord } from '../domain/types'
 import type { PhysicalKey } from '../domain/keyboardLayout'
 import { actionLabel, formatHex, layerName } from '../domain/formatters'
@@ -10,10 +10,9 @@ interface KeyInspectorProps {
   activeLayer: number
 }
 
-function ActionDetails({ record }: { record: KeymapRecord | undefined }) {
-  if (!record) return <p className="empty-value">No capture</p>
+function ActionDetails({ record }: { record: KeymapRecord }) {
   const { action } = record
-  if (action.kind === 'unset') return <p className="empty-value">Unassigned</p>
+  if (action.kind === 'unset') return null
 
   if (action.kind === 'keys' || action.kind === 'emulate') {
     return (
@@ -58,36 +57,41 @@ export function KeyInspector({
           <span>Selected key</span>
           <h2>{physicalKey?.label ?? 'Unknown'}</h2>
         </div>
-        <span className="read-only-state" title="Read-only capture">
-          <LockKeyhole size={13} />
-          Read only
-        </span>
       </div>
 
       <section className="inspector-section">
         <h3>Assignment</h3>
-        <strong className="assignment-title">{actionLabel(record?.action)}</strong>
-        <ActionDetails record={record} />
+        {record ? (
+          <>
+            <strong className="assignment-title">{actionLabel(record.action)}</strong>
+            <ActionDetails record={record} />
+          </>
+        ) : (
+          <p className="empty-value">No data for this key</p>
+        )}
       </section>
 
-      <section className="inspector-section">
-        <h3>Protocol</h3>
-        <dl className="inspector-properties">
-          <div><dt>Position</dt><dd>#{physicalKey?.position ?? '—'}</dd></div>
-          <div><dt>Layer</dt><dd>{layerName(activeLayer)}</dd></div>
-          <div><dt>Packet</dt><dd>{record ? '0xF0' : '—'}</dd></div>
-          <div><dt>Function</dt><dd>{record ? formatHex(record.functionType, 2) : '—'}</dd></div>
-        </dl>
-      </section>
-
-      <section className="inspector-section inspector-section--raw">
-        <h3><Binary size={14} /> Raw report</h3>
-        <div className="hex-grid">
-          {record?.raw.slice(0, 16).map((byte, index) => (
-            <span key={index}>{byte.toString(16).padStart(2, '0').toUpperCase()}</span>
-          )) ?? <span>—</span>}
+      <details className="inspector-advanced">
+        <summary>
+          <ChevronRight size={14} />
+          Technical details
+        </summary>
+        <div className="inspector-advanced-body">
+          <dl className="inspector-properties">
+            <div><dt>Position</dt><dd>#{physicalKey?.position ?? '—'}</dd></div>
+            <div><dt>Layer</dt><dd>{layerName(activeLayer)}</dd></div>
+            <div><dt>Function</dt><dd>{record ? formatHex(record.functionType, 2) : '—'}</dd></div>
+          </dl>
+          <div className="inspector-raw-report">
+            <h3><Binary size={14} /> Raw report</h3>
+            <div className="hex-grid">
+              {record?.raw.slice(0, 16).map((byte, index) => (
+                <span key={index}>{byte.toString(16).padStart(2, '0').toUpperCase()}</span>
+              )) ?? <span>—</span>}
+            </div>
+          </div>
         </div>
-      </section>
+      </details>
     </aside>
   )
 }
