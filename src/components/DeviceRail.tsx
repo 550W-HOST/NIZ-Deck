@@ -1,6 +1,5 @@
-import { Activity, Cpu, Database, ShieldCheck, Usb } from 'lucide-react'
+import { Cpu, Database, ShieldCheck, Usb } from 'lucide-react'
 import type {
-  DeviceStatus,
   KeymapCapture,
   NizDeviceInfo,
 } from '../domain/types'
@@ -9,7 +8,6 @@ import type { CompatibilityReadVerification } from '../device/compatibilityRepor
 import type { NizDeviceSupport } from '../device/nizDeviceModels'
 
 interface DeviceRailProps {
-  status: DeviceStatus
   device: NizDeviceInfo | null
   support: NizDeviceSupport | null
   firmware: string | null
@@ -19,7 +17,6 @@ interface DeviceRailProps {
 }
 
 export function DeviceRail({
-  status,
   device,
   support,
   firmware,
@@ -27,8 +24,6 @@ export function DeviceRail({
   readVerification,
   keyCount,
 }: DeviceRailProps) {
-  const usagePage = device?.collections[0]?.usagePage
-
   return (
     <aside className="device-rail">
       <section className="rail-section">
@@ -97,21 +92,6 @@ export function DeviceRail({
         </dl>
       </section>
 
-      <section className="rail-section rail-section--bottom">
-        <div className="protocol-state">
-          <Activity size={15} />
-          <div>
-            <span>Transport</span>
-            <strong>
-              {status === 'unsupported'
-                ? 'Unavailable'
-                : usagePage === undefined
-                  ? 'WebHID'
-                  : `WebHID · ${formatHex(usagePage)}`}
-            </strong>
-          </div>
-        </div>
-      </section>
     </aside>
   )
 }

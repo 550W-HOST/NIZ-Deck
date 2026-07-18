@@ -32,6 +32,7 @@
 }
 
 .app-shell {
+  height: 100svh;
   min-height: 100svh;
   display: grid;
   grid-template-rows: 58px minmax(0, 1fr) 30px;
@@ -259,12 +260,6 @@
   border-bottom: 1px solid var(--line);
 }
 
-.rail-section--bottom {
-  margin-top: auto;
-  border-top: 1px solid var(--line);
-  border-bottom: 0;
-}
-
 .rail-section h2,
 .inspector-section h3 {
   margin: 0 0 13px;
@@ -316,32 +311,6 @@
   color: var(--ink);
   font: 600 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
   text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.protocol-state {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: var(--green);
-}
-
-.protocol-state div {
-  min-width: 0;
-  display: grid;
-}
-
-.protocol-state span {
-  color: var(--ink-faint);
-  font-size: 9px;
-  text-transform: uppercase;
-}
-
-.protocol-state strong {
-  overflow: hidden;
-  color: var(--ink);
-  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1170,14 +1139,40 @@
 
 .diagnostics-panel {
   min-width: 0;
-  height: 220px;
-  max-height: 34vh;
   flex: 0 0 auto;
   display: grid;
-  grid-template-rows: 35px minmax(0, 1fr);
+  grid-template-rows: 8px 35px minmax(0, 1fr);
   border-top: 1px solid #bfc5bf;
   color: #d8ded9;
   background: #171b18;
+}
+
+.diagnostics-resize-handle {
+  position: relative;
+  min-width: 0;
+  border-bottom: 1px solid #303732;
+  background: #1e2420;
+  cursor: ns-resize;
+  touch-action: none;
+  outline: none;
+}
+
+.diagnostics-resize-handle::after {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 38px;
+  height: 2px;
+  border-radius: 1px;
+  background: #59625b;
+  content: '';
+  transform: translateX(-50%);
+}
+
+.diagnostics-resize-handle:hover::after,
+.diagnostics-resize-handle:focus-visible::after,
+.diagnostics-panel--resizing .diagnostics-resize-handle::after {
+  background: #9da79f;
 }
 
 .diagnostics-panel > header {
@@ -1314,16 +1309,16 @@
   to { transform: rotate(360deg); }
 }
 
+@media (min-width: 901px) {
+  .workspace {
+    overflow: hidden;
+  }
+}
+
 @media (max-width: 1100px) {
   .workspace {
     grid-template-columns: 190px minmax(0, 1fr) 270px;
   }
-
-  .diagnostics-panel {
-    height: 190px;
-    max-height: none;
-  }
-
 }
 
 @media (max-width: 1300px) {
@@ -1335,6 +1330,7 @@
 
 @media (max-width: 900px) {
   .app-shell {
+    height: auto;
     grid-template-rows: 58px auto 30px;
   }
 
@@ -1345,7 +1341,7 @@
 
   .device-rail {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 0.9fr;
+    grid-template-columns: 1fr 1fr;
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
@@ -1357,9 +1353,7 @@
     border-bottom: 0;
   }
 
-  .rail-section--bottom {
-    margin: 0;
-    border-top: 0;
+  .rail-section:last-child {
     border-right: 0;
   }
 

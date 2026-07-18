@@ -111,7 +111,6 @@ function App() {
       <div className="content-stack">
         <div className="workspace">
           <DeviceRail
-            status={niz.status}
             device={niz.device}
             support={niz.deviceSupport}
             firmware={niz.firmware}
