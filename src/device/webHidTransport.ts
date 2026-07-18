@@ -11,6 +11,7 @@ import { NIZ_COMMAND, NIZ_REPORT_LENGTH } from '../protocol/nizProtocol'
 import {
   NIZ_68_PRO_PRODUCT_ID,
   NIZ_84_EC_PRODUCT_ID,
+  NIZ_87_PRODUCT_ID,
   NIZ_VENDOR_ID,
 } from './nizDeviceModels'
 
@@ -26,6 +27,11 @@ export const NIZ_84_EC_FILTER: HIDDeviceFilter = {
   productId: NIZ_84_EC_PRODUCT_ID,
 }
 
+export const NIZ_87_FILTER: HIDDeviceFilter = {
+  vendorId: NIZ_VENDOR_ID,
+  productId: NIZ_87_PRODUCT_ID,
+}
+
 export const NIZ_COMPATIBILITY_FILTER: HIDDeviceFilter = {
   vendorId: NIZ_VENDOR_ID,
 }
@@ -33,6 +39,7 @@ export const NIZ_COMPATIBILITY_FILTER: HIDDeviceFilter = {
 export const NIZ_DEVICE_FILTERS: readonly HIDDeviceFilter[] = [
   NIZ_68_PRO_FILTER,
   NIZ_84_EC_FILTER,
+  NIZ_87_FILTER,
 ]
 
 export function summarizeHidCollections(

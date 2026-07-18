@@ -585,7 +585,8 @@
 
 .kle-key-legend,
 .kle-key-secondary,
-.kle-key-assignment {
+.kle-key-assignment,
+.kle-key-physical-reference {
   position: absolute;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -636,6 +637,15 @@
   font-size: 8px;
 }
 
+.keyboard-stage--tkl .kle-key-assignment {
+  font-size: 8px;
+}
+
+.keyboard-stage--tkl .kle-key-physical-reference {
+  left: 3px;
+  font-size: 5.5px;
+}
+
 .kle-key-secondary {
   top: 6px;
   right: auto;
@@ -648,25 +658,58 @@
 
 .kle-key-assignment {
   top: 50%;
-  right: 6px;
+  right: 4px;
   bottom: auto;
-  left: 6px;
-  transform: translateY(-50%);
-  color: #68736b;
-  font-size: 7px;
-  font-weight: 600;
-  line-height: 1.1;
+  left: 4px;
+  display: -webkit-box;
+  max-height: 2.15em;
+  overflow-wrap: anywhere;
+  transform: translateY(-44%);
+  color: #2d322e;
+  font-size: 9px;
+  font-weight: 760;
+  line-height: 1.05;
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-.kle-key:not(.has-secondary) .kle-key-assignment {
-  top: auto;
-  bottom: 4px;
-  transform: none;
+.kle-key-physical-reference {
+  top: 4px;
+  right: 15px;
+  left: 5px;
+  color: var(--ink-faint);
+  font-size: 6px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.kle-key.has-compact-primary .kle-key-assignment {
+  font-size: 8px;
+}
+
+.kle-key.has-dense-primary .kle-key-assignment {
+  font-size: 6.5px;
+  line-height: 1.05;
+}
+
+.kle-key.has-unset-action .kle-key-assignment,
+.kle-key.has-missing-assignment .kle-key-assignment {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .kle-key.is-selected .kle-key-assignment {
-  color: #43698d;
+  color: #204e79;
+}
+
+.kle-key.is-selected .kle-key-physical-reference {
+  color: #5f7f9c;
 }
 
 .key-inspector {

@@ -3,6 +3,7 @@ import type { NizDeviceInfo } from '../domain/types'
 import {
   NIZ_68_PRO_PRODUCT_ID,
   NIZ_84_EC_PRODUCT_ID,
+  NIZ_87_PRODUCT_ID,
   NIZ_VENDOR_ID,
   getNizDeviceSupport,
 } from './nizDeviceModels'
@@ -62,6 +63,25 @@ describe('NiZ device support profiles', () => {
       }],
     }))).toMatchObject({
       profileId: 'community-candidate',
+      verification: 'read-candidate',
+      canRead: true,
+      canWrite: false,
+      keyCount: 87,
+    })
+  })
+
+  it('recognizes the reported 0x5131 product ID as a read-only 87-key profile', () => {
+    expect(getNizDeviceSupport(device({
+      productName: 'USB Keyboard',
+      productId: NIZ_87_PRODUCT_ID,
+      collections: [{
+        usagePage: 0xff00,
+        usage: 1,
+        inputReportIds: [0],
+        outputReportIds: [0],
+      }],
+    }))).toMatchObject({
+      profileId: 'niz-87',
       verification: 'read-candidate',
       canRead: true,
       canWrite: false,

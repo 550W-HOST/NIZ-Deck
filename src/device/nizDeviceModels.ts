@@ -3,6 +3,7 @@ import type { NizDeviceInfo } from '../domain/types'
 export const NIZ_VENDOR_ID = 0x0483
 export const NIZ_68_PRO_PRODUCT_ID = 0x5532
 export const NIZ_84_EC_PRODUCT_ID = 0x5129
+export const NIZ_87_PRODUCT_ID = 0x5131
 export const NIZ_66_PRODUCT_ID = 0x512a
 
 export const NIZ_SUPPORTED_KEY_COUNTS = [68, 84, 87] as const
@@ -14,7 +15,7 @@ export type NizDeviceVerification =
   | 'metadata-only'
 
 export interface NizDeviceSupport {
-  profileId: 'niz-68-pro' | 'niz-84-ec' | 'community-candidate' | 'unrecognized'
+  profileId: 'niz-68-pro' | 'niz-84-ec' | 'niz-87' | 'community-candidate' | 'unrecognized'
   label: string
   verification: NizDeviceVerification
   keyCount: NizSupportedKeyCount | null
@@ -44,6 +45,9 @@ export function detectNizDeviceKeyCount(
   if (isKnownNiz66Device(device)) return null
   if (device.vendorId === NIZ_VENDOR_ID && device.productId === NIZ_84_EC_PRODUCT_ID) {
     return 84
+  }
+  if (device.vendorId === NIZ_VENDOR_ID && device.productId === NIZ_87_PRODUCT_ID) {
+    return 87
   }
   if (device.vendorId === NIZ_VENDOR_ID && device.productId === NIZ_68_PRO_PRODUCT_ID) {
     return 68
@@ -124,6 +128,18 @@ export function getNizDeviceSupport(
       canRead: true,
       canWrite: false,
       reason: 'The 84EC profile is recognized but has not been verified for writing on hardware',
+    }
+  }
+
+  if (device.productId === NIZ_87_PRODUCT_ID) {
+    return {
+      profileId: 'niz-87',
+      label: '87 read only',
+      verification: 'read-candidate',
+      keyCount: 87,
+      canRead: true,
+      canWrite: false,
+      reason: 'The reported NIZ 87 profile is recognized but has not been verified for writing on hardware',
     }
   }
 

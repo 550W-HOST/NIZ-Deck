@@ -224,6 +224,7 @@ function App() {
               activeLayer={activeLayer}
               transitionDirection={layerTransitionDirection}
               selectedPosition={selectedPosition}
+              keymapLoaded={Boolean(niz.capture)}
               modifiedPositions={modifiedPositions}
               onLayerChange={handleLayerChange}
               onSelect={setSelectedPosition}

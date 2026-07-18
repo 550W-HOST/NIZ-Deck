@@ -199,6 +199,7 @@ export function KeymapEditorPreview() {
               activeLayer={activeLayer}
               transitionDirection={transitionDirection}
               selectedPosition={selectedPosition}
+              keymapLoaded
               modifiedPositions={modifiedPositions}
               onLayerChange={changeLayer}
               onSelect={setSelectedPosition}
