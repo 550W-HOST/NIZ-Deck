@@ -22,7 +22,7 @@ editor UI without connecting to WebHID. The preview never sends device commands.
 
 - Connect to NIZ 68 Pro (`VID 0x0483`, `PID 0x5532`), 84EC (`PID 0x5129`), and the reported NIZ 87 (`PID 0x5131`)
 - Explicitly discover unknown `VID 0x0483` devices in compatibility mode without widening the normal picker
-- Open the 68 Pro program interface (`UsagePage 0x8C`, Usage `0x01`); discover the 84EC and reported 87 collections by VID/PID
+- Open the 68 Pro and reported 87 program interfaces (`UsagePage 0x8C`, Usage `0x01`); discover the 84EC collection by VID/PID
 - Read firmware version (`0xF9`)
 - Capture the complete keymap (`0xF2`, `0xF0`, `0xF6`)
 - Keep unrelated devices metadata-only; probe only NiZ-like names and HID programming collections

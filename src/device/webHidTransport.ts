@@ -13,6 +13,7 @@ import {
   NIZ_84_EC_PRODUCT_ID,
   NIZ_87_PRODUCT_ID,
   NIZ_VENDOR_ID,
+  hasNizProgramCollection,
 } from './nizDeviceModels'
 
 export const NIZ_68_PRO_FILTER: HIDDeviceFilter = {
@@ -30,6 +31,8 @@ export const NIZ_84_EC_FILTER: HIDDeviceFilter = {
 export const NIZ_87_FILTER: HIDDeviceFilter = {
   vendorId: NIZ_VENDOR_ID,
   productId: NIZ_87_PRODUCT_ID,
+  usagePage: 0x008c,
+  usage: 0x0001,
 }
 
 export const NIZ_COMPATIBILITY_FILTER: HIDDeviceFilter = {
@@ -51,6 +54,31 @@ export function summarizeHidCollections(
     inputReportIds: collection.inputReports.map((report) => report.reportId),
     outputReportIds: collection.outputReports.map((report) => report.reportId),
   }, ...summarizeHidCollections(collection.children)])
+}
+
+function describeHidDevice(device: HIDDevice): NizDeviceInfo {
+  return {
+    productName: device.productName,
+    vendorId: device.vendorId,
+    productId: device.productId,
+    collections: summarizeHidCollections(device.collections),
+  }
+}
+
+function isNizProgramDevice(device: HIDDevice): boolean {
+  return hasNizProgramCollection(describeHidDevice(device))
+}
+
+export function selectNizHidDevice(devices: readonly HIDDevice[]): HIDDevice {
+  if (devices.length === 0) throw new Error('No keyboard selected')
+  if (devices.length === 1) return devices[0]!
+
+  const programDevices = devices.filter(isNizProgramDevice)
+  if (programDevices.length === 1) return programDevices[0]!
+  if (programDevices.length === 0) {
+    throw new Error('No NIZ programming interface found among selected HID interfaces')
+  }
+  throw new Error('Multiple NIZ programming interfaces selected')
 }
 
 export class WebHidTransport implements HidTransport {
@@ -113,17 +141,18 @@ export class WebHidTransport implements HidTransport {
       })
       throw error
     }
+    const programDeviceCount = devices.filter(isNizProgramDevice).length
     this.logger({
-      level: devices.length === 1 ? 'success' : 'warn',
+      level: devices.length === 1 || programDeviceCount === 1 ? 'success' : 'warn',
       scope: 'transport',
       message: 'Device picker completed',
-      data: { selectedDevices: devices.length },
+      data: {
+        selectedDevices: devices.length,
+        programmingInterfaces: programDeviceCount,
+      },
     })
-    if (devices.length !== 1) {
-      throw new Error(devices.length === 0 ? 'No keyboard selected' : 'Multiple keyboards selected')
-    }
 
-    const device = devices[0]
+    const device = selectNizHidDevice(devices)
     this.logger({
       level: 'info',
       scope: 'transport',
@@ -148,7 +177,7 @@ export class WebHidTransport implements HidTransport {
     }
     device.addEventListener('inputreport', this.handleInputReport)
     this.device = device
-    const description = this.describeDevice(device)
+    const description = describeHidDevice(device)
     this.logger({
       level: 'success',
       scope: 'transport',
@@ -230,15 +259,6 @@ export class WebHidTransport implements HidTransport {
     })
     for (const listener of this.listeners) {
       listener({ reportId: event.reportId, bytes })
-    }
-  }
-
-  private describeDevice(device: HIDDevice): NizDeviceInfo {
-    return {
-      productName: device.productName,
-      vendorId: device.vendorId,
-      productId: device.productId,
-      collections: summarizeHidCollections(device.collections),
     }
   }
 }
