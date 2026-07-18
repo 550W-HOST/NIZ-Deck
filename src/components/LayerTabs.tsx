@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { layerName } from '../domain/formatters'
 
 interface LayerTabsProps {
@@ -15,6 +16,27 @@ export function LayerTabs({
   onChange,
 }: LayerTabsProps) {
   const tablistRef = useRef<HTMLDivElement>(null)
+
+  const handleKeyDown = (
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    layer: number,
+  ): void => {
+    const currentIndex = layers.indexOf(layer)
+    let nextLayer: number | undefined
+    if (event.key === 'ArrowLeft') nextLayer = layers[currentIndex - 1]
+    if (event.key === 'ArrowRight') nextLayer = layers[currentIndex + 1]
+    if (event.key === 'Home') nextLayer = layers[0]
+    if (event.key === 'End') nextLayer = layers.at(-1)
+    if (nextLayer === undefined || nextLayer === layer) return
+
+    event.preventDefault()
+    onChange(nextLayer)
+    window.requestAnimationFrame(() => {
+      tablistRef.current
+        ?.querySelector<HTMLButtonElement>(`[data-layer="${nextLayer}"]`)
+        ?.focus()
+    })
+  }
 
   useLayoutEffect(() => {
     const tablist = tablistRef.current
@@ -87,10 +109,12 @@ export function LayerTabs({
           type="button"
           role="tab"
           aria-selected={activeLayer === layer}
+          tabIndex={activeLayer === layer ? 0 : -1}
           className={activeLayer === layer ? 'is-active' : ''}
           data-layer={layer}
           key={layer}
           onClick={() => onChange(layer)}
+          onKeyDown={(event) => handleKeyDown(event, layer)}
         >
           {layerName(layer)}
         </button>

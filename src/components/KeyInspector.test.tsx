@@ -42,4 +42,33 @@ describe('KeyInspector information hierarchy', () => {
     expect(markup).toContain('Raw report')
     expect(markup).not.toContain('Packet')
   })
+
+  it('shows editable draft controls without changing technical source data', () => {
+    const record: KeymapRecord = {
+      layer: 1,
+      position: 1,
+      functionType: 0,
+      action: { kind: 'keys', keycodes: [1] },
+      raw: [0, 0xf0, 1, 1, 0, 1, 1],
+    }
+    const markup = renderToStaticMarkup(
+      <KeyInspector
+        physicalKey={physicalKey}
+        record={record}
+        activeLayer={1}
+        assignment={{ kind: 'keys', keycodes: [67, 43] }}
+        editable
+        changed
+        onAssign={() => undefined}
+        onRevert={() => undefined}
+      />,
+    )
+
+    expect(markup).toContain('Draft')
+    expect(markup).toContain('Left Ctrl + A')
+    expect(markup).toContain('Change')
+    expect(markup).toContain('Restore device assignment')
+    expect(markup).toContain('<dd>0x00</dd>')
+    expect(markup).not.toContain('Read-only device profile')
+  })
 })

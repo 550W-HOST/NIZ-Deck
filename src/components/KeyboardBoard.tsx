@@ -1,11 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeymapRecord } from '../domain/types'
 import type { KeyboardLayout } from '../domain/keyboardLayout'
 import { actionLabel } from '../domain/formatters'
 import { useLayerWheelNavigation } from '../hooks/useLayerWheelNavigation'
-import { LayerTabs } from './LayerTabs'
-
-const LAYER_CONTROL_HIDE_MS = 900
 
 interface KeyboardBoardProps {
   layout: KeyboardLayout
@@ -14,6 +10,7 @@ interface KeyboardBoardProps {
   activeLayer: number
   transitionDirection: 'previous' | 'next'
   selectedPosition: number
+  modifiedPositions?: ReadonlySet<number>
   onLayerChange(layer: number, direction?: 'previous' | 'next'): void
   onSelect(position: number): void
 }
@@ -25,45 +22,17 @@ export function KeyboardBoard({
   activeLayer,
   transitionDirection,
   selectedPosition,
+  modifiedPositions,
   onLayerChange,
   onSelect,
 }: KeyboardBoardProps) {
   const assignments = new Map(records.map((record) => [record.position, record]))
-  const [layerControlVisible, setLayerControlVisible] = useState(false)
-  const layerControlHideTimerRef = useRef<number | null>(null)
-
-  const clearLayerControlHideTimer = useCallback((): void => {
-    if (layerControlHideTimerRef.current === null) return
-    window.clearTimeout(layerControlHideTimerRef.current)
-    layerControlHideTimerRef.current = null
-  }, [])
-
-  const scheduleLayerControlHide = useCallback((): void => {
-    clearLayerControlHideTimer()
-    layerControlHideTimerRef.current = window.setTimeout(() => {
-      setLayerControlVisible(false)
-      layerControlHideTimerRef.current = null
-    }, LAYER_CONTROL_HIDE_MS)
-  }, [clearLayerControlHideTimer])
-
-  const showLayerControl = useCallback((): void => {
-    setLayerControlVisible(true)
-    scheduleLayerControlHide()
-  }, [scheduleLayerControlHide])
-
-  useEffect(() => clearLayerControlHideTimer, [clearLayerControlHideTimer])
 
   const workspaceRef = useLayerWheelNavigation<HTMLDivElement>({
     layers,
     activeLayer,
     onChange: onLayerChange,
-    onActivity: showLayerControl,
   })
-
-  const handleLayerControlChange = (layer: number): void => {
-    setLayerControlVisible(true)
-    onLayerChange(layer)
-  }
 
   return (
     <div className="keyboard-work-area" ref={workspaceRef}>
@@ -85,6 +54,10 @@ export function KeyboardBoard({
             {layout.keys.map((key) => {
               const assignment = assignments.get(key.position)
               const assignmentText = assignment ? actionLabel(assignment.action) : null
+              const visibleAssignmentText = assignmentText
+                && assignmentText.toLocaleLowerCase() !== key.label.toLocaleLowerCase()
+                ? assignmentText
+                : null
               const accessibleAssignment = assignmentText ?? 'Not loaded'
               const compactLabel = key.width <= 1 && key.label.length >= 4
               const style = {
@@ -102,20 +75,25 @@ export function KeyboardBoard({
                       compactLabel ? 'has-compact-label' : '',
                       key.tone ? `kle-key--${key.tone}` : '',
                       selectedPosition === key.position ? 'is-selected' : '',
+                      modifiedPositions?.has(key.position) ? 'is-modified' : '',
                       assignment?.action.kind === 'unknown' ? 'has-unknown-action' : '',
                     ].filter(Boolean).join(' ')}
                     type="button"
                     onClick={() => onSelect(key.position)}
-                    title={`#${key.position} · ${accessibleAssignment}`}
-                    aria-label={`${key.label}, position ${key.position}, ${accessibleAssignment}`}
+                    title={`#${key.position} · ${accessibleAssignment}${
+                      modifiedPositions?.has(key.position) ? ' · Draft modified' : ''
+                    }`}
+                    aria-label={`${key.label}, position ${key.position}, ${accessibleAssignment}${
+                      modifiedPositions?.has(key.position) ? ', draft modified' : ''
+                    }`}
                   >
                     <span className="kle-key-cap">
                       {key.secondary && (
                         <span className="kle-key-secondary">{key.secondary}</span>
                       )}
                       <span className="kle-key-legend">{key.label}</span>
-                      {assignmentText && (
-                        <span className="kle-key-assignment">{assignmentText}</span>
+                      {visibleAssignmentText && (
+                        <span className="kle-key-assignment">{visibleAssignmentText}</span>
                       )}
                     </span>
                   </button>
@@ -125,28 +103,6 @@ export function KeyboardBoard({
           </div>
         </section>
       </div>
-
-      <aside
-        className={`keyboard-layer-control${layerControlVisible ? ' is-visible' : ''}`}
-        aria-label="Layer selection"
-        onMouseEnter={() => {
-          clearLayerControlHideTimer()
-          setLayerControlVisible(true)
-        }}
-        onMouseLeave={scheduleLayerControlHide}
-        onFocusCapture={() => {
-          clearLayerControlHideTimer()
-          setLayerControlVisible(true)
-        }}
-        onBlurCapture={scheduleLayerControlHide}
-      >
-        <LayerTabs
-          layers={layers}
-          activeLayer={activeLayer}
-          transitionDirection={transitionDirection}
-          onChange={handleLayerControlChange}
-        />
-      </aside>
     </div>
   )
 }

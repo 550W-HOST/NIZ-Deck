@@ -46,6 +46,157 @@ const NIZ_KEYCODE_NAMES: Record<number, string> = {
   176: 'USB Report Rate', 177: 'Scan Period', 178: 'App Lock',
 }
 
+export type NizKeycodeCategory =
+  | 'Typing'
+  | 'Navigation'
+  | 'Media'
+  | 'Mouse'
+  | 'Lighting'
+  | 'Device'
+
+export interface NizKeycodeOption {
+  keycode: number
+  label: string
+  category: NizKeycodeCategory
+}
+
+export const NIZ_KEYCODE_CATEGORIES: readonly NizKeycodeCategory[] = [
+  'Typing',
+  'Navigation',
+  'Media',
+  'Mouse',
+  'Lighting',
+  'Device',
+]
+
+export function keycodeCategory(keycode: number): NizKeycodeCategory {
+  if (keycode <= 74) return 'Typing'
+  if (keycode <= 107) return 'Navigation'
+  if (keycode <= 125) return 'Media'
+  if (keycode <= 134) return 'Mouse'
+  if ((keycode >= 135 && keycode <= 149) || (keycode >= 160 && keycode <= 165)) {
+    return 'Lighting'
+  }
+  return 'Device'
+}
+
+export const NIZ_KEYCODE_OPTIONS: readonly NizKeycodeOption[] = Object.entries(
+  NIZ_KEYCODE_NAMES,
+).flatMap(([keycode, label]) => {
+  const value = Number(keycode)
+  return value === 0 ? [] : [{ keycode: value, label, category: keycodeCategory(value) }]
+})
+
+const KEYBOARD_CODE_TO_NIZ_KEYCODE: Readonly<Record<string, number>> = {
+  Escape: 1,
+  F1: 2, F2: 3, F3: 4, F4: 5, F5: 6, F6: 7,
+  F7: 8, F8: 9, F9: 10, F10: 11, F11: 12, F12: 13,
+  Backquote: 14,
+  Digit1: 15, Digit2: 16, Digit3: 17, Digit4: 18, Digit5: 19,
+  Digit6: 20, Digit7: 21, Digit8: 22, Digit9: 23, Digit0: 24,
+  Minus: 25,
+  Equal: 26,
+  Backspace: 27,
+  Tab: 28,
+  KeyQ: 29, KeyW: 30, KeyE: 31, KeyR: 32, KeyT: 33,
+  KeyY: 34, KeyU: 35, KeyI: 36, KeyO: 37, KeyP: 38,
+  BracketLeft: 39,
+  BracketRight: 40,
+  Backslash: 41,
+  CapsLock: 42,
+  KeyA: 43, KeyS: 44, KeyD: 45, KeyF: 46, KeyG: 47,
+  KeyH: 48, KeyJ: 49, KeyK: 50, KeyL: 51,
+  Semicolon: 52,
+  Quote: 53,
+  Enter: 54,
+  ShiftLeft: 55,
+  KeyZ: 56, KeyX: 57, KeyC: 58, KeyV: 59, KeyB: 60,
+  KeyN: 61, KeyM: 62,
+  Comma: 63,
+  Period: 64,
+  Slash: 65,
+  ShiftRight: 66,
+  ControlLeft: 67,
+  MetaLeft: 68,
+  AltLeft: 69,
+  Space: 70,
+  AltRight: 71,
+  MetaRight: 72,
+  ContextMenu: 73,
+  ControlRight: 74,
+  PrintScreen: 78,
+  ScrollLock: 79,
+  Pause: 80,
+  Insert: 81,
+  Home: 82,
+  PageUp: 83,
+  Delete: 84,
+  End: 85,
+  PageDown: 86,
+  ArrowUp: 87,
+  ArrowLeft: 88,
+  ArrowDown: 89,
+  ArrowRight: 90,
+  NumLock: 91,
+  NumpadDivide: 92,
+  NumpadMultiply: 93,
+  Numpad7: 94, Numpad8: 95, Numpad9: 96,
+  Numpad4: 97, Numpad5: 98, Numpad6: 99,
+  Numpad1: 100, Numpad2: 101, Numpad3: 102,
+  Numpad0: 103,
+  NumpadDecimal: 104,
+  NumpadSubtract: 105,
+  NumpadAdd: 106,
+  NumpadEnter: 107,
+  MediaTrackNext: 108,
+  MediaTrackPrevious: 109,
+  MediaStop: 110,
+  MediaPlayPause: 111,
+  AudioVolumeMute: 112,
+  AudioVolumeUp: 113,
+  AudioVolumeDown: 114,
+}
+
+const MODIFIER_CODES = new Set([
+  'ControlLeft',
+  'ControlRight',
+  'MetaLeft',
+  'MetaRight',
+  'AltLeft',
+  'AltRight',
+  'ShiftLeft',
+  'ShiftRight',
+])
+
+export function keycodeForKeyboardCode(code: string): number | undefined {
+  return KEYBOARD_CODE_TO_NIZ_KEYCODE[code]
+}
+
+export function isModifierKeyboardCode(code: string): boolean {
+  return MODIFIER_CODES.has(code)
+}
+
+interface KeyboardChordEvent {
+  code: string
+  ctrlKey: boolean
+  metaKey: boolean
+  altKey: boolean
+  shiftKey: boolean
+}
+
+export function keycodesForKeyboardChord(event: KeyboardChordEvent): number[] {
+  const mainKeycode = keycodeForKeyboardCode(event.code)
+  if (mainKeycode === undefined) return []
+
+  const keycodes: number[] = []
+  if (event.ctrlKey && !event.code.startsWith('Control')) keycodes.push(67)
+  if (event.metaKey && !event.code.startsWith('Meta')) keycodes.push(68)
+  if (event.altKey && !event.code.startsWith('Alt')) keycodes.push(69)
+  if (event.shiftKey && !event.code.startsWith('Shift')) keycodes.push(55)
+  keycodes.push(mainKeycode)
+  return [...new Set(keycodes)]
+}
+
 export function keycodeName(keycode: number): string {
   return NIZ_KEYCODE_NAMES[keycode] ?? `Code 0x${keycode.toString(16).padStart(2, '0').toUpperCase()}`
 }

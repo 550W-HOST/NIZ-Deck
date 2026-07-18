@@ -1,16 +1,26 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import './App.css'
 import { AppHeader } from './components/AppHeader'
 import { DeviceRail } from './components/DeviceRail'
 import { DiagnosticsPanel } from './components/DiagnosticsPanel'
+import { DraftBar } from './components/DraftBar'
+import { DraftReviewDialog } from './components/DraftReviewDialog'
 import { KeyboardBoard } from './components/KeyboardBoard'
 import { KeyInspector } from './components/KeyInspector'
+import { LayerTabs } from './components/LayerTabs'
 import { LayoutPicker } from './components/LayoutPicker'
 import { StatusBar } from './components/StatusBar'
 import { WriteVerificationDialog } from './components/WriteVerificationDialog'
 import type { LayoutSelection } from './domain/keyboardLayout'
 import { physicalKeyAt, resolveKeyboardLayout } from './data/keyboardLayouts'
 import { useNizDevice } from './hooks/useNizDevice'
+import {
+  createKeymapDraftState,
+  draftAssignmentFor,
+  draftRecordKey,
+  keymapDraftChanges,
+  keymapDraftReducer,
+} from './domain/keymapDraft'
 
 function App() {
   const niz = useNizDevice()
@@ -22,6 +32,12 @@ function App() {
   const [layoutSelection, setLayoutSelection] = useState<LayoutSelection>('auto')
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
   const [writeDialogOpen, setWriteDialogOpen] = useState(false)
+  const [draftReviewOpen, setDraftReviewOpen] = useState(false)
+  const [keymapDraft, dispatchKeymapDraft] = useReducer(
+    keymapDraftReducer,
+    undefined,
+    createKeymapDraftState,
+  )
   const resolvedLayout = useMemo(
     () => resolveKeyboardLayout(layoutSelection, {
       device: niz.device,
@@ -41,8 +57,33 @@ function App() {
     () => niz.capture?.records.filter((record) => record.layer === activeLayer) ?? [],
     [activeLayer, niz.capture],
   )
+  const draftChanges = keymapDraftChanges(keymapDraft)
+  const draftSessionVisible = draftChanges.length > 0
+    || keymapDraft.past.length > 0
+    || keymapDraft.future.length > 0
+  const displayedActiveRecords = useMemo(
+    () => activeRecords.map((record) => {
+      const assignment = draftAssignmentFor(keymapDraft, record)
+      return assignment && assignment !== record.action
+        ? { ...record, action: assignment }
+        : record
+    }),
+    [activeRecords, keymapDraft],
+  )
+  const modifiedPositions = useMemo(
+    () => new Set(
+      draftChanges
+        .filter((change) => change.layer === activeLayer)
+        .map((change) => change.position),
+    ),
+    [activeLayer, draftChanges],
+  )
   const selectedRecord = activeRecords.find(
     (record) => record.position === selectedPosition,
+  )
+  const selectedAssignment = draftAssignmentFor(keymapDraft, selectedRecord)
+  const selectedRecordChanged = Boolean(
+    selectedRecord && keymapDraft.present[draftRecordKey(selectedRecord)],
   )
   const showsDeviceRail = Boolean(niz.device || niz.capture)
   const showsKeyInspector = Boolean(niz.capture)
@@ -64,6 +105,21 @@ function App() {
   useEffect(() => {
     if (niz.status === 'error' || niz.status === 'unsupported') setDiagnosticsOpen(true)
   }, [niz.status])
+
+  useEffect(() => {
+    dispatchKeymapDraft({ type: 'clear' })
+    setDraftReviewOpen(false)
+  }, [niz.capture?.capturedAt])
+
+  useEffect(() => {
+    if (draftChanges.length === 0) return undefined
+    const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [draftChanges.length])
 
   const handleConnect = (): void => {
     setDiagnosticsOpen(true)
@@ -88,8 +144,18 @@ function App() {
     setActiveLayer(layer)
   }
 
+  const runAfterDraftConfirmation = (action: () => void): void => {
+    if (
+      draftChanges.length > 0
+      && !window.confirm('Discard the pending keymap draft?')
+    ) return
+    dispatchKeymapDraft({ type: 'clear' })
+    setDraftReviewOpen(false)
+    action()
+  }
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell${draftSessionVisible ? ' app-shell--has-draft' : ''}`}>
       <AppHeader
         status={niz.status}
         device={niz.device}
@@ -98,13 +164,16 @@ function App() {
         diagnosticAlertCount={diagnosticAlertCount}
         canRefresh={Boolean(niz.deviceSupport?.canRead && !niz.recoveryRequired)}
         canVerifyWrite={Boolean(
-          niz.capture && niz.device && niz.deviceSupport?.canWrite,
+          niz.capture
+          && niz.device
+          && niz.deviceSupport?.canWrite
+          && draftChanges.length === 0,
         )}
         recoveryRequired={niz.recoveryRequired}
         onConnect={handleConnect}
         onConnectCompatibility={handleCompatibilityConnect}
-        onDisconnect={() => void niz.disconnect()}
-        onRefresh={() => void niz.refresh()}
+        onDisconnect={() => runAfterDraftConfirmation(() => void niz.disconnect())}
+        onRefresh={() => runAfterDraftConfirmation(() => void niz.refresh())}
         onExport={() => {
           if (exportsCompatibilityReport) {
             void niz.exportCompatibilityReport()
@@ -134,6 +203,12 @@ function App() {
                 <h1>{niz.device?.productName ?? 'Keymap'}</h1>
               </div>
               <div className="keymap-toolbar-actions">
+                <LayerTabs
+                  layers={layers}
+                  activeLayer={activeLayer}
+                  transitionDirection={layerTransitionDirection}
+                  onChange={handleLayerChange}
+                />
                 <LayoutPicker
                   layout={layout}
                   selection={layoutSelection}
@@ -144,11 +219,12 @@ function App() {
 
             <KeyboardBoard
               layout={layout}
-              records={activeRecords}
+              records={displayedActiveRecords}
               layers={layers}
               activeLayer={activeLayer}
               transitionDirection={layerTransitionDirection}
               selectedPosition={selectedPosition}
+              modifiedPositions={modifiedPositions}
               onLayerChange={handleLayerChange}
               onSelect={setSelectedPosition}
             />
@@ -159,6 +235,25 @@ function App() {
               physicalKey={physicalKeyAt(layout, selectedPosition)}
               record={selectedRecord}
               activeLayer={activeLayer}
+              assignment={selectedAssignment}
+              editable={Boolean(niz.deviceSupport?.canWrite)}
+              changed={selectedRecordChanged}
+              onAssign={selectedRecord && niz.deviceSupport?.canWrite
+                ? (assignment) => dispatchKeymapDraft({
+                    type: 'assign',
+                    layer: selectedRecord.layer,
+                    position: selectedRecord.position,
+                    original: selectedRecord.action,
+                    assignment,
+                  })
+                : undefined}
+              onRevert={selectedRecordChanged && selectedRecord
+                ? () => dispatchKeymapDraft({
+                    type: 'revert',
+                    layer: selectedRecord.layer,
+                    position: selectedRecord.position,
+                  })
+                : undefined}
             />
           )}
         </div>
@@ -170,6 +265,18 @@ function App() {
           onClear={niz.clearLogs}
         />
       </div>
+
+      {draftSessionVisible && (
+        <DraftBar
+          changeCount={draftChanges.length}
+          canUndo={keymapDraft.past.length > 0}
+          canRedo={keymapDraft.future.length > 0}
+          onUndo={() => dispatchKeymapDraft({ type: 'undo' })}
+          onRedo={() => dispatchKeymapDraft({ type: 'redo' })}
+          onReset={() => dispatchKeymapDraft({ type: 'clear' })}
+          onReview={() => setDraftReviewOpen(true)}
+        />
+      )}
 
       <StatusBar
         status={niz.status}
@@ -191,6 +298,14 @@ function App() {
           setDiagnosticsOpen(true)
           void niz.verifyKeymapWrite()
         }}
+      />
+
+      <DraftReviewDialog
+        open={draftReviewOpen}
+        changes={draftChanges}
+        layout={layout}
+        onClose={() => setDraftReviewOpen(false)}
+        onReset={() => dispatchKeymapDraft({ type: 'clear' })}
       />
     </div>
   )
