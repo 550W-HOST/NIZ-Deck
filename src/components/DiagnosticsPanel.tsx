@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react'
 import type { DiagnosticLogEntry } from '../domain/diagnostics'
+import { cx } from '../uiStyles'
 
 interface DiagnosticsPanelProps {
   open: boolean
@@ -33,10 +34,10 @@ function maxPanelHeight(panel: HTMLElement): number {
   const containerHeight = panel.parentElement?.getBoundingClientRect().height
     ?? window.innerHeight
   const headerHeight = document
-    .querySelector<HTMLElement>('.app-header')
+    .querySelector<HTMLElement>('[data-app-header]')
     ?.getBoundingClientRect().height ?? 0
   const statusHeight = document
-    .querySelector<HTMLElement>('.status-bar')
+    .querySelector<HTMLElement>('[data-status-bar]')
     ?.getBoundingClientRect().height ?? 0
   const viewportContentHeight = window.innerHeight - headerHeight - statusHeight
   const availableHeight = Math.min(containerHeight, viewportContentHeight)
@@ -166,12 +167,17 @@ export function DiagnosticsPanel({
   return (
     <section
       ref={panelRef}
-      className={`diagnostics-panel${resizing ? ' diagnostics-panel--resizing' : ''}`}
+      className="grid min-w-0 flex-none grid-rows-[8px_35px_minmax(0,1fr)] border-t border-[#bfc5bf] bg-[#171b18] text-[#d8ded9]"
       aria-label="Diagnostics log"
       style={{ height: panelHeight }}
     >
       <div
-        className="diagnostics-resize-handle"
+        className={cx(
+          'relative min-w-0 touch-none cursor-ns-resize border-b border-[#303732] bg-[#1e2420] outline-none',
+          'after:absolute after:top-[3px] after:left-1/2 after:h-0.5 after:w-[38px] after:-translate-x-1/2 after:rounded-[1px] after:bg-[#59625b] after:content-[\'\']',
+          'hover:after:bg-[#9da79f] focus-visible:after:bg-[#9da79f]',
+          resizing && 'after:bg-[#9da79f]',
+        )}
         role="separator"
         aria-label="Resize diagnostics panel"
         aria-orientation="horizontal"
@@ -182,14 +188,17 @@ export function DiagnosticsPanel({
         onKeyDown={resizeWithKeyboard}
         onPointerDown={startResize}
       />
-      <header>
-        <div>
+      <header className="flex min-w-0 items-center justify-between gap-3 border-b border-[#303732] bg-[#1e2420] py-0 pr-2 pl-3">
+        <div className="flex items-center gap-[7px]">
           <SquareTerminal size={15} />
-          <strong>Diagnostics</strong>
-          <span>{entries.length}</span>
+          <strong className="text-[10px]">Diagnostics</strong>
+          <span className="min-w-5 rounded-[3px] bg-[#303732] px-[5px] py-0.5 text-center font-mono text-[9px] leading-[1.2] text-[#bac2bc]">
+            {entries.length}
+          </span>
         </div>
-        <div>
+        <div className="flex items-center gap-[7px]">
           <button
+            className="inline-flex size-[27px] cursor-pointer items-center justify-center rounded-[4px] border border-transparent bg-transparent p-0 text-[#aeb7b0] enabled:hover:border-[#444d46] enabled:hover:bg-[#2a312c] enabled:hover:text-white disabled:cursor-default disabled:opacity-[0.35]"
             type="button"
             onClick={() => void copyLogs()}
             disabled={entries.length === 0}
@@ -199,6 +208,7 @@ export function DiagnosticsPanel({
             {copied ? <Check size={14} /> : <Copy size={14} />}
           </button>
           <button
+            className="inline-flex size-[27px] cursor-pointer items-center justify-center rounded-[4px] border border-transparent bg-transparent p-0 text-[#aeb7b0] enabled:hover:border-[#444d46] enabled:hover:bg-[#2a312c] enabled:hover:text-white disabled:cursor-default disabled:opacity-[0.35]"
             type="button"
             onClick={onClear}
             disabled={entries.length === 0}
@@ -208,6 +218,7 @@ export function DiagnosticsPanel({
             <Trash2 size={14} />
           </button>
           <button
+            className="inline-flex size-[27px] cursor-pointer items-center justify-center rounded-[4px] border border-transparent bg-transparent p-0 text-[#aeb7b0] enabled:hover:border-[#444d46] enabled:hover:bg-[#2a312c] enabled:hover:text-white disabled:cursor-default disabled:opacity-[0.35]"
             type="button"
             onClick={onClose}
             aria-label="Close diagnostics"
@@ -217,16 +228,37 @@ export function DiagnosticsPanel({
           </button>
         </div>
       </header>
-      <div className="diagnostics-list" ref={listRef}>
+      <div className="min-h-0 overflow-auto px-0 pt-1.5 pb-[10px] font-mono" ref={listRef}>
         {entries.length === 0 ? (
-          <p>No events</p>
+          <p className="mx-3 my-4 text-[10px] text-[#7f8982]">No events</p>
         ) : entries.map((entry) => (
-          <div className={`log-entry log-entry--${entry.level}`} key={entry.id}>
-            <time>{entry.timestamp.slice(11, 23)}</time>
-            <span>{entry.level}</span>
-            <strong>{entry.scope}</strong>
-            <p>{entry.message}</p>
-            {entry.data !== undefined && <code>{JSON.stringify(entry.data)}</code>}
+          <div
+            className="grid min-w-[760px] grid-cols-[82px_52px_66px_minmax(180px,auto)] items-baseline gap-[7px] px-3 py-[3px] text-[9px] leading-[1.45] text-[#bcc4be] hover:bg-[#202622]"
+            key={entry.id}
+          >
+            <time className="text-[#78837b]">{entry.timestamp.slice(11, 23)}</time>
+            <span className={cx(
+              'uppercase text-[#8d9890]',
+              entry.level === 'success' && 'text-[#79c59c]',
+              entry.level === 'warn' && 'text-[#e2b763]',
+              entry.level === 'error' && 'text-[#ee8981]',
+            )}>
+              {entry.level}
+            </span>
+            <strong className="font-[650] text-[#7ea2c9]">{entry.scope}</strong>
+            <p className={cx(
+              'm-0 text-[#dbe1dc]',
+              entry.level === 'success' && 'text-[#79c59c]',
+              entry.level === 'warn' && 'text-[#e2b763]',
+              entry.level === 'error' && 'text-[#ee8981]',
+            )}>
+              {entry.message}
+            </p>
+            {entry.data !== undefined && (
+              <code className="col-start-4 font-[inherit] text-[#89958d] [overflow-wrap:anywhere]">
+                {JSON.stringify(entry.data)}
+              </code>
+            )}
           </div>
         ))}
       </div>

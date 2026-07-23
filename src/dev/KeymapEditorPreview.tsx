@@ -20,6 +20,14 @@ import {
 import type { KeymapCapture, KeymapRecord, NizDeviceInfo } from '../domain/types'
 import { getNizDeviceSupport } from '../device/nizDeviceModels'
 import { summarizeKeymap } from '../protocol/nizProtocol'
+import {
+  appShellClass,
+  contentStackClass,
+  keymapToolbarActionsClass,
+  keymapToolbarClass,
+  keymapWorkspaceClass,
+  workspaceClass,
+} from '../uiStyles'
 
 const BASE_KEYCODES = [
   1,
@@ -146,7 +154,7 @@ export function KeymapEditorPreview() {
   }
 
   return (
-    <div className={`app-shell${draftSessionVisible ? ' app-shell--has-draft' : ''}`}>
+    <div className={appShellClass(draftSessionVisible)}>
       <AppHeader
         status="ready"
         device={PREVIEW_DEVICE}
@@ -165,8 +173,8 @@ export function KeymapEditorPreview() {
         onToggleDiagnostics={() => undefined}
       />
 
-      <div className="content-stack">
-        <div className="workspace">
+      <div className={contentStackClass}>
+        <div className={workspaceClass(true, true)}>
           <DeviceRail
             device={PREVIEW_DEVICE}
             support={getNizDeviceSupport(PREVIEW_DEVICE, 68)}
@@ -175,10 +183,14 @@ export function KeymapEditorPreview() {
             readVerification={{ attempts: 1, consistent: null }}
           />
 
-          <main className="keymap-workspace">
-            <div className="keymap-toolbar">
-              <div className="keymap-title"><h1>{PREVIEW_DEVICE.productName}</h1></div>
-              <div className="keymap-toolbar-actions">
+          <main className={keymapWorkspaceClass}>
+            <div className={keymapToolbarClass}>
+              <div className="min-w-[150px]">
+                <h1 className="m-0 text-[17px] font-bold text-ink">
+                  {PREVIEW_DEVICE.productName}
+                </h1>
+              </div>
+              <div className={keymapToolbarActionsClass}>
                 <LayerTabs
                   layers={[1, 2, 3]}
                   activeLayer={activeLayer}

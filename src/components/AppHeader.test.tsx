@@ -74,7 +74,7 @@ describe('AppHeader compatibility controls', () => {
       />,
     )
 
-    expect(markup).toContain('<span>3</span>')
+    expect(markup).toContain('data-diagnostics-alert-count="3"')
     expect(markup).not.toContain('Community Web Configurator')
   })
 })

@@ -19,6 +19,17 @@ import {
   NIZ_KEYCODE_OPTIONS,
   type NizKeycodeCategory,
 } from '../data/nizKeycodes'
+import {
+  cx,
+  dialogBackdropClass,
+  dialogButtonClass,
+  dialogCloseButtonClass,
+  dialogFooterClass,
+  dialogHeaderClass,
+  dialogHeaderTitleClass,
+  dialogPanelClass,
+  dialogPrimaryButtonClass,
+} from '../uiStyles'
 
 type PickerMode = 'keys' | 'sequence'
 type CategoryFilter = 'All' | NizKeycodeCategory
@@ -159,13 +170,17 @@ export function KeyActionPicker({
 
   return (
     <div
-      className="dialog-backdrop key-action-backdrop"
+      className={cx(dialogBackdropClass, 'max-[520px]:p-2')}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
     >
       <form
-        className="key-action-dialog"
+        className={cx(
+          dialogPanelClass,
+          'grid h-[min(680px,calc(100svh-36px))] max-h-[calc(100svh-36px)] w-[min(100%,720px)] grid-rows-[54px_minmax(0,1fr)_54px]',
+          'max-[520px]:h-[calc(100svh-16px)]',
+        )}
         role="dialog"
         aria-modal="true"
         aria-labelledby="key-action-dialog-title"
@@ -174,26 +189,43 @@ export function KeyActionPicker({
           saveAssignment()
         }}
       >
-        <header>
-          <div>
+        <header className={dialogHeaderClass}>
+          <div className={dialogHeaderTitleClass}>
             <Keyboard size={18} />
-            <div>
-              <h2 id="key-action-dialog-title">
+            <div className="min-w-0">
+              <h2
+                className="m-0 overflow-hidden text-[15px] font-bold text-ellipsis whitespace-nowrap text-ink"
+                id="key-action-dialog-title"
+              >
                 Assign {physicalKey?.label ?? 'key'}
               </h2>
-              <span>{layerName(activeLayer)}</span>
+              <span className="mt-0.5 block text-[9px] text-ink-muted">
+                {layerName(activeLayer)}
+              </span>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" title="Close">
+          <button
+            className={dialogCloseButtonClass}
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+          >
             <X size={16} />
           </button>
         </header>
 
-        <div className="key-action-dialog-body">
-          <div className="assignment-mode-control" aria-label="Assignment type">
+        <div className="grid min-h-0 min-w-0 grid-rows-[auto_auto_auto_auto_minmax(120px,1fr)] gap-3 overflow-hidden px-4 pt-[15px] pb-4 max-[520px]:gap-[10px] max-[520px]:p-3">
+          <div
+            className="inline-flex w-fit rounded-md border border-line-strong bg-[#e9ece7] p-[3px] max-[520px]:w-full"
+            aria-label="Assignment type"
+          >
             <button
               type="button"
-              className={mode === 'keys' ? 'is-active' : ''}
+              className={cx(
+                'h-7 min-w-[104px] cursor-pointer rounded-[4px] border-0 bg-transparent px-3 text-[10px] font-[650] text-ink-muted hover:bg-white/50 hover:text-ink max-[520px]:min-w-0 max-[520px]:flex-1',
+                mode === 'keys' && 'bg-surface text-ink shadow-[0_1px_3px_rgba(8,12,9,0.16)] hover:bg-surface',
+              )}
               aria-pressed={mode === 'keys'}
               onClick={() => changeMode('keys')}
             >
@@ -201,7 +233,10 @@ export function KeyActionPicker({
             </button>
             <button
               type="button"
-              className={mode === 'sequence' ? 'is-active' : ''}
+              className={cx(
+                'h-7 min-w-[104px] cursor-pointer rounded-[4px] border-0 bg-transparent px-3 text-[10px] font-[650] text-ink-muted hover:bg-white/50 hover:text-ink max-[520px]:min-w-0 max-[520px]:flex-1',
+                mode === 'sequence' && 'bg-surface text-ink shadow-[0_1px_3px_rgba(8,12,9,0.16)] hover:bg-surface',
+              )}
               aria-pressed={mode === 'sequence'}
               onClick={() => changeMode('sequence')}
             >
@@ -209,18 +244,28 @@ export function KeyActionPicker({
             </button>
           </div>
 
-          <section className="assignment-selection" aria-label="Selected keycodes">
-            <div className="assignment-selection-heading">
-              <strong>{mode === 'keys' ? 'Chord' : 'Sequence'}</strong>
-              <span>{keycodes.length}/{maxKeycodes}</span>
+          <section className="min-w-0 border-b border-line pb-3" aria-label="Selected keycodes">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <strong className="text-[10px] uppercase">
+                {mode === 'keys' ? 'Chord' : 'Sequence'}
+              </strong>
+              <span className="font-mono text-[9px] leading-none text-ink-faint">
+                {keycodes.length}/{maxKeycodes}
+              </span>
             </div>
-            <div className="assignment-token-list">
+            <div className="flex min-h-[30px] flex-wrap items-center gap-[5px]">
               {keycodes.length === 0 ? (
-                <span className="assignment-token-empty">No keys selected</span>
+                <span className="inline-flex min-h-[25px] items-center text-[9px] text-ink-faint">
+                  No keys selected
+                </span>
               ) : keycodes.map((keycode, index) => (
-                <span className="assignment-token" key={`${keycode}-${index}`}>
+                <span
+                  className="inline-flex min-h-[25px] items-center gap-[5px] rounded-[4px] border border-[#bcc2bc] border-b-2 bg-[#f8f9f7] py-0 pr-[3px] pl-[7px] text-[9px] font-[650] text-[#343934]"
+                  key={`${keycode}-${index}`}
+                >
                   {keycodeName(keycode)}
                   <button
+                    className="inline-flex size-[19px] cursor-pointer items-center justify-center rounded-[3px] border-0 bg-transparent p-0 text-ink-faint hover:bg-surface-strong hover:text-ink"
                     type="button"
                     onClick={() => setKeycodes((current) => current.filter(
                       (_, currentIndex) => currentIndex !== index,
@@ -234,9 +279,10 @@ export function KeyActionPicker({
               ))}
             </div>
             {mode === 'sequence' && (
-              <label className="sequence-delay-control">
+              <label className="mt-[10px] grid w-fit grid-cols-[auto_78px_auto] items-center gap-[7px] text-[9px] text-ink-muted">
                 <span>Delay</span>
                 <input
+                  className="h-7 w-[78px] rounded-[5px] border border-line-strong bg-surface px-[7px] py-0 font-mono text-[10px] leading-none text-ink"
                   type="number"
                   min="0"
                   max="65535"
@@ -249,10 +295,13 @@ export function KeyActionPicker({
             )}
           </section>
 
-          <div className="capture-control">
+          <div className="flex min-w-0 items-center gap-[9px]">
             <button
               type="button"
-              className={capturing ? 'is-capturing' : ''}
+              className={cx(
+                'inline-flex h-[31px] cursor-pointer items-center justify-center gap-[7px] rounded-[5px] border border-line-strong bg-surface px-[10px] text-[9px] font-[650] text-[#4d554f] hover:border-[#a8afa8] hover:bg-[#eef0ed]',
+                capturing && 'border-[#dba7a2] bg-danger-soft text-danger hover:border-[#dba7a2] hover:bg-danger-soft',
+              )}
               onClick={() => setCapturing((current) => !current)}
               title={mode === 'keys' ? 'Capture a physical key chord' : 'Append physical keys'}
             >
@@ -263,14 +312,17 @@ export function KeyActionPicker({
                   ? 'Record chord'
                   : 'Record sequence'}
             </button>
-            <span aria-live="polite">{capturing ? 'Listening…' : ''}</span>
+            <span className="text-[9px] text-danger" aria-live="polite">
+              {capturing ? 'Listening…' : ''}
+            </span>
           </div>
 
-          <div className="keycode-library-toolbar">
-            <label className="keycode-search">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_148px] gap-2 max-[520px]:grid-cols-[minmax(0,1fr)]">
+            <label className="relative flex h-8 items-center gap-[7px] rounded-[5px] border border-line-strong bg-surface px-[9px] py-0 text-ink-faint focus-within:border-action focus-within:ring-2 focus-within:ring-[rgba(45,99,162,0.14)]">
               <Search size={14} />
               <span className="sr-only">Search keycodes</span>
               <input
+                className="h-full w-full min-w-0 border-0 bg-transparent text-[10px] text-ink outline-0 placeholder:text-ink-faint"
                 ref={searchInputRef}
                 type="search"
                 value={search}
@@ -278,9 +330,10 @@ export function KeyActionPicker({
                 placeholder="Search keys and functions"
               />
             </label>
-            <label className="keycode-category">
+            <label className="relative flex h-8 items-center rounded-[5px] border border-line-strong bg-surface px-[7px] py-0 focus-within:border-action focus-within:ring-2 focus-within:ring-[rgba(45,99,162,0.14)]">
               <span className="sr-only">Keycode category</span>
               <select
+                className="h-full w-full min-w-0 cursor-pointer border-0 bg-transparent text-[10px] text-ink outline-0"
                 value={category}
                 onChange={(event) => setCategory(event.currentTarget.value as CategoryFilter)}
               >
@@ -292,33 +345,45 @@ export function KeyActionPicker({
             </label>
           </div>
 
-          <div className="keycode-option-list" aria-label="Available keycodes">
+          <div
+            className="grid min-h-0 min-w-0 grid-cols-2 content-start overflow-auto rounded-md border border-line bg-surface max-[520px]:grid-cols-1"
+            aria-label="Available keycodes"
+          >
             {filteredOptions.length === 0 ? (
-              <p>No matching keys</p>
+              <p className="col-span-full mx-3 my-7 text-center text-[10px] text-ink-faint">
+                No matching keys
+              </p>
             ) : filteredOptions.map((option) => {
               const selected = keycodes.includes(option.keycode)
               return (
                 <button
                   type="button"
-                  className={selected ? 'is-selected' : ''}
+                  className={cx(
+                    'grid h-[38px] min-w-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto_16px] items-center gap-2 border-0 border-r border-b border-line bg-transparent px-[9px] py-0 text-left text-ink even:border-r-0 enabled:hover:bg-surface-muted disabled:cursor-default disabled:opacity-40 max-[520px]:border-r-0',
+                    selected && 'bg-action-soft text-[#153b60] enabled:hover:bg-action-soft',
+                  )}
                   aria-pressed={mode === 'keys' ? selected : undefined}
                   disabled={selectionFull && (mode === 'sequence' || !selected)}
                   onClick={() => chooseKeycode(option.keycode)}
                   key={option.keycode}
                 >
-                  <span>{option.label}</span>
-                  <small>{option.category}</small>
-                  {selected && mode === 'keys' ? <Check size={14} /> : <Plus size={14} />}
+                  <span className="overflow-hidden text-[10px] font-[650] text-ellipsis whitespace-nowrap">
+                    {option.label}
+                  </span>
+                  <small className="text-[8px] text-ink-faint">{option.category}</small>
+                  {selected && mode === 'keys'
+                    ? <Check className="text-action" size={14} />
+                    : <Plus className="text-action" size={14} />}
                 </button>
               )
             })}
           </div>
         </div>
 
-        <footer>
-          <button className="dialog-button" type="button" onClick={onClose}>Cancel</button>
+        <footer className={dialogFooterClass}>
+          <button className={dialogButtonClass} type="button" onClick={onClose}>Cancel</button>
           <button
-            className="dialog-button dialog-button--primary"
+            className={dialogPrimaryButtonClass}
             type="submit"
             disabled={keycodes.length === 0}
           >

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useReducer, useState } from 'react'
-import './App.css'
 import { AppHeader } from './components/AppHeader'
 import { DeviceRail } from './components/DeviceRail'
 import { DiagnosticsPanel } from './components/DiagnosticsPanel'
@@ -21,6 +20,14 @@ import {
   keymapDraftChanges,
   keymapDraftReducer,
 } from './domain/keymapDraft'
+import {
+  appShellClass,
+  contentStackClass,
+  keymapToolbarActionsClass,
+  keymapToolbarClass,
+  keymapWorkspaceClass,
+  workspaceClass,
+} from './uiStyles'
 
 function App() {
   const niz = useNizDevice()
@@ -90,12 +97,6 @@ function App() {
   const diagnosticAlertCount = niz.logs.filter(
     (entry) => entry.level === 'warn' || entry.level === 'error',
   ).length
-  const workspaceClassName = [
-    'workspace',
-    showsDeviceRail ? '' : 'workspace--no-device-rail',
-    showsKeyInspector ? '' : 'workspace--no-inspector',
-  ].filter(Boolean).join(' ')
-
   useEffect(() => {
     if (!physicalKeyAt(layout, selectedPosition)) {
       setSelectedPosition(layout.keys[0]?.position ?? 1)
@@ -155,7 +156,7 @@ function App() {
   }
 
   return (
-    <div className={`app-shell${draftSessionVisible ? ' app-shell--has-draft' : ''}`}>
+    <div className={appShellClass(draftSessionVisible)}>
       <AppHeader
         status={niz.status}
         device={niz.device}
@@ -185,8 +186,8 @@ function App() {
         onToggleDiagnostics={() => setDiagnosticsOpen((open) => !open)}
       />
 
-      <div className="content-stack">
-        <div className={workspaceClassName}>
+      <div className={contentStackClass}>
+        <div className={workspaceClass(showsDeviceRail, showsKeyInspector)}>
           {showsDeviceRail && (
             <DeviceRail
               device={niz.device}
@@ -197,12 +198,14 @@ function App() {
             />
           )}
 
-          <main className="keymap-workspace">
-            <div className="keymap-toolbar">
-              <div className="keymap-title">
-                <h1>{niz.device?.productName ?? 'Keymap'}</h1>
+          <main className={keymapWorkspaceClass}>
+            <div className={keymapToolbarClass}>
+              <div className="min-w-[150px]">
+                <h1 className="m-0 text-[17px] font-bold text-ink">
+                  {niz.device?.productName ?? 'Keymap'}
+                </h1>
               </div>
-              <div className="keymap-toolbar-actions">
+              <div className={keymapToolbarActionsClass}>
                 <LayerTabs
                   layers={layers}
                   activeLayer={activeLayer}

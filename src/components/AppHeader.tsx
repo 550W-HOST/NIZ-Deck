@@ -10,6 +10,12 @@ import {
   Usb,
 } from 'lucide-react'
 import type { DeviceStatus, NizDeviceInfo } from '../domain/types'
+import {
+  cx,
+  iconButtonClass,
+  primaryCommandButtonClass,
+  quietCommandButtonClass,
+} from '../uiStyles'
 
 interface AppHeaderProps {
   status: DeviceStatus
@@ -58,17 +64,25 @@ export function AppHeader({
   const busy = busyStatuses.includes(status)
 
   return (
-    <header className="app-header">
-      <div className="brand-block">
-        <span className="brand-mark" aria-hidden="true">
+    <header
+      className="relative z-10 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-[18px] border-b border-line bg-surface px-4"
+      data-app-header
+    >
+      <div className="flex min-w-0 items-center gap-[10px]">
+        <span
+          className="inline-flex size-[34px] flex-none items-center justify-center rounded-md bg-[#23372d] text-white"
+          aria-hidden="true"
+        >
           <Keyboard size={18} strokeWidth={2.2} />
         </span>
-        <strong>NIZ Deck</strong>
+        <strong className="overflow-hidden text-[13px] font-bold text-ellipsis whitespace-nowrap text-ink">
+          NIZ Deck
+        </strong>
       </div>
 
-      <div className="header-actions">
+      <div className="flex min-w-0 items-center justify-self-end gap-[7px]">
         <button
-          className="icon-button icon-button--logs"
+          className={cx(iconButtonClass, 'relative')}
           type="button"
           onClick={onToggleDiagnostics}
           aria-label="Open diagnostics"
@@ -76,13 +90,21 @@ export function AppHeader({
         >
           <SquareTerminal size={17} />
           {diagnosticAlertCount > 0 && (
-            <span>{Math.min(diagnosticAlertCount, 99)}</span>
+            <span
+              className="absolute -top-[5px] -right-[5px] inline-flex h-4 min-w-4 items-center justify-center rounded-lg border-2 border-surface bg-danger px-[3px] text-[8px] font-[750] text-white"
+              data-diagnostics-alert-count={diagnosticAlertCount}
+            >
+              {Math.min(diagnosticAlertCount, 99)}
+            </span>
           )}
         </button>
         {device && (
           <>
             <button
-              className={`icon-button icon-button--write${recoveryRequired ? ' requires-recovery' : ''}`}
+              className={cx(
+                iconButtonClass,
+                recoveryRequired && 'border-[#dba7a2] bg-danger-soft text-danger',
+              )}
               type="button"
               onClick={onVerifyWrite}
               disabled={!canVerifyWrite || busy}
@@ -92,17 +114,20 @@ export function AppHeader({
               <ShieldCheck size={17} />
             </button>
             <button
-              className="icon-button"
+              className={iconButtonClass}
               type="button"
               onClick={onRefresh}
               disabled={busy || !canRefresh}
               aria-label="Refresh keymap"
               title="Refresh keymap"
             >
-              <RefreshCw size={17} className={busy ? 'is-spinning' : ''} />
+              <RefreshCw
+                size={17}
+                className={busy ? 'animate-spin [animation-duration:900ms]' : undefined}
+              />
             </button>
             <button
-              className="icon-button"
+              className={iconButtonClass}
               type="button"
               onClick={onExport}
               disabled={!canExport}
@@ -121,7 +146,7 @@ export function AppHeader({
         )}
         {device ? (
           <button
-            className="command-button command-button--quiet"
+            className={quietCommandButtonClass}
             type="button"
             onClick={onDisconnect}
             disabled={busy}
@@ -129,12 +154,12 @@ export function AppHeader({
             title="Disconnect keyboard"
           >
             <Unplug size={16} />
-            <span className="button-label">Disconnect</span>
+            <span className="max-[700px]:hidden">Disconnect</span>
           </button>
         ) : (
           <>
             <button
-              className="icon-button"
+              className={iconButtonClass}
               type="button"
               onClick={onConnectCompatibility}
               disabled={busy || status === 'unsupported'}
@@ -144,7 +169,7 @@ export function AppHeader({
               <ScanSearch size={17} />
             </button>
             <button
-              className="command-button"
+              className={primaryCommandButtonClass}
               type="button"
               onClick={onConnect}
               disabled={busy || status === 'unsupported'}
@@ -152,7 +177,7 @@ export function AppHeader({
               title="Connect keyboard"
             >
               <Usb size={16} />
-              <span className="button-label">Connect</span>
+              <span className="max-[700px]:hidden">Connect</span>
             </button>
           </>
         )}

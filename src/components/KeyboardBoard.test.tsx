@@ -34,13 +34,14 @@ describe('KeyboardBoard labels', () => {
       />,
     )
 
-    expect(markup).toContain('is-modified')
-    expect(markup).toContain('is-loaded')
+    expect(markup).toContain('data-modified="true"')
+    expect(markup).toContain('data-action-kind="keys"')
     expect(markup).toContain('draft modified')
     expect(markup).toContain('Left Ctrl + A')
-    expect(markup).toContain('kle-key-physical-reference">Esc')
-    expect(markup).toContain('kle-key-assignment">LCtrl+A')
-    expect(markup).not.toContain('kle-key-legend')
+    expect(markup).toContain('data-key-reference="true"')
+    expect(markup).toContain('data-key-assignment="true"')
+    expect(markup).toContain('>LCtrl+A</span>')
+    expect(markup).not.toContain('data-key-legend')
   })
 
   it('shows one centered assignment when the loaded mapping matches the key', () => {
@@ -64,8 +65,9 @@ describe('KeyboardBoard labels', () => {
       />,
     )
 
-    expect(markup).toContain('kle-key-assignment">Esc')
-    expect(markup).not.toContain('kle-key-physical-reference')
+    expect(markup).toContain('data-key-assignment="true"')
+    expect(markup).toContain('>Esc</span>')
+    expect(markup).not.toContain('data-key-reference')
   })
 
   it('keeps the physical legend before a complete keymap is loaded', () => {
@@ -82,8 +84,9 @@ describe('KeyboardBoard labels', () => {
       />,
     )
 
-    expect(markup).toContain('kle-key-legend">Esc')
-    expect(markup).not.toContain('is-loaded')
-    expect(markup).not.toContain('kle-key-assignment')
+    expect(markup).toContain('data-key-legend="true"')
+    expect(markup).toContain('data-action-kind="unloaded"')
+    expect(markup).toContain('>Esc</span>')
+    expect(markup).not.toContain('data-key-assignment')
   })
 })

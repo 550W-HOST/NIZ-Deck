@@ -1,52 +1,105 @@
-:root {
-  font-family:
+@import "tailwindcss";
+
+@theme {
+  --font-sans:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
-  color: #202320;
-  background: #f2f3f0;
-  color-scheme: light;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  letter-spacing: 0;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-canvas: #f2f3f0;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f7f8f6;
+  --color-surface-strong: #e5e8e3;
+  --color-line: #d9ddd7;
+  --color-line-strong: #c6ccc4;
+  --color-ink: #202320;
+  --color-ink-muted: #6b726c;
+  --color-ink-faint: #929991;
+  --color-success: #217451;
+  --color-success-soft: #e6f2ec;
+  --color-action: #2d63a2;
+  --color-action-soft: #e8f0f8;
+  --color-warning: #9a6300;
+  --color-warning-soft: #f8eed8;
+  --color-danger: #b33a32;
+  --color-danger-soft: #f8e9e7;
+
+  --animate-layer-next: layer-stage-next 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-layer-previous: layer-stage-previous 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  @keyframes layer-stage-next {
+    from {
+      opacity: 0.55;
+      transform: translateY(8px);
+    }
+  }
+
+  @keyframes layer-stage-previous {
+    from {
+      opacity: 0.55;
+      transform: translateY(-8px);
+    }
+  }
 }
 
-* {
-  box-sizing: border-box;
+@layer base {
+  :root {
+    min-width: 320px;
+    color: var(--color-ink);
+    background: var(--color-canvas);
+    color-scheme: light;
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: 0;
+    --key-gap: 2px;
+  }
+
+  html,
+  body,
+  #root {
+    min-width: 320px;
+    min-height: 100%;
+    margin: 0;
+  }
+
+  body {
+    min-height: 100svh;
+    overflow-x: hidden;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    letter-spacing: 0;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--color-action);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    color: #10212e;
+    background: #c9def2;
+  }
 }
 
-html,
-body,
-#root {
-  min-width: 320px;
-  min-height: 100%;
-  margin: 0;
-}
-
-body {
-  min-height: 100svh;
-  overflow-x: hidden;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  letter-spacing: 0;
-}
-
-button {
-  -webkit-tap-highlight-color: transparent;
-}
-
-button:focus-visible {
-  outline: 2px solid #2d63a2;
-  outline-offset: 2px;
-}
-
-::selection {
-  color: #10212e;
-  background: #c9def2;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
