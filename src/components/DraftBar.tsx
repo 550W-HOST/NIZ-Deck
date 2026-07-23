@@ -20,14 +20,25 @@ export function DraftBar({
   onReview,
 }: DraftBarProps) {
   return (
-    <aside className="draft-bar" aria-label="Keymap draft controls">
-      <div className="draft-bar-status" role="status">
-        <span>{changeCount}</span>
-        <strong>{changeCount === 1 ? 'change' : 'changes'} pending</strong>
+    <aside
+      className="flex min-w-0 items-center justify-between gap-4 border-t border-[#c6b281] bg-[#fffaf0] px-3 max-[520px]:gap-2 max-[520px]:px-2"
+      aria-label="Keymap draft controls"
+    >
+      <div
+        className="flex min-w-0 items-center gap-2 text-[#6f5317]"
+        data-change-count={changeCount}
+        role="status"
+      >
+        <span className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-[4px] bg-warning px-[5px] text-[10px] font-[750] text-white">
+          {changeCount}
+        </span>
+        <strong className="overflow-hidden text-[10px] text-ellipsis whitespace-nowrap max-[520px]:hidden">
+          {changeCount === 1 ? 'change' : 'changes'} pending
+        </strong>
       </div>
-      <div className="draft-bar-actions">
+      <div className="flex min-w-0 flex-none items-center gap-1.5">
         <button
-          className="draft-icon-button"
+          className="inline-flex size-[30px] cursor-pointer items-center justify-center rounded-[5px] border border-[#c7b98f] bg-white p-0 text-[#5d543e] enabled:hover:border-[#aa996e] enabled:hover:bg-[#f7f1e3] disabled:cursor-default disabled:opacity-[0.38]"
           type="button"
           disabled={!canUndo}
           onClick={onUndo}
@@ -37,7 +48,7 @@ export function DraftBar({
           <Undo2 size={15} />
         </button>
         <button
-          className="draft-icon-button"
+          className="inline-flex size-[30px] cursor-pointer items-center justify-center rounded-[5px] border border-[#c7b98f] bg-white p-0 text-[#5d543e] enabled:hover:border-[#aa996e] enabled:hover:bg-[#f7f1e3] disabled:cursor-default disabled:opacity-[0.38]"
           type="button"
           disabled={!canRedo}
           onClick={onRedo}
@@ -47,7 +58,7 @@ export function DraftBar({
           <Redo2 size={15} />
         </button>
         <button
-          className="draft-reset-button"
+          className="inline-flex h-[30px] cursor-pointer items-center justify-center gap-1.5 rounded-[5px] border border-[#c7b98f] bg-white px-[9px] text-[9px] font-[650] text-[#5d543e] enabled:hover:border-[#aa996e] enabled:hover:bg-[#f7f1e3] disabled:cursor-default disabled:opacity-[0.42] max-[520px]:w-[30px] max-[520px]:p-0"
           type="button"
           onClick={onReset}
           disabled={changeCount === 0}
@@ -55,10 +66,10 @@ export function DraftBar({
           title="Reset all draft changes"
         >
           <RotateCcw size={14} />
-          <span>Reset all</span>
+          <span className="max-[520px]:hidden">Reset all</span>
         </button>
         <button
-          className="draft-review-button"
+          className="inline-flex h-[30px] cursor-pointer items-center justify-center gap-1.5 rounded-[5px] border border-[#245587] bg-action px-[9px] text-[9px] font-[650] text-white enabled:hover:border-[#1d4770] enabled:hover:bg-[#27588f] disabled:cursor-default disabled:opacity-[0.42] max-[520px]:px-2"
           type="button"
           onClick={onReview}
           disabled={changeCount === 0}

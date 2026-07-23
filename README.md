@@ -1,6 +1,6 @@
 # NIZ Deck
 
-Community WebHID configurator with physical-layout support for NIZ 68 Pro, 84EC, and 87-key ANSI keyboards, built with React and TypeScript.
+Community WebHID configurator with physical-layout support for NIZ 68 Pro, 84EC, and 87-key ANSI keyboards, built with React, TypeScript, and Tailwind CSS.
 
 NIZ Deck is an independent community project and is not affiliated with NiZ.
 
@@ -52,4 +52,6 @@ src/
   hooks/        React device lifecycle
   protocol/     64-byte packet codec and parser
   types/        WebHID browser declarations
+  index.css     Tailwind theme tokens and document-level base styles
+  uiStyles.ts   Shared Tailwind utility compositions
 ```

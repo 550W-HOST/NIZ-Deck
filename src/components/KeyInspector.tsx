@@ -12,6 +12,12 @@ import type { PhysicalKey } from '../domain/keyboardLayout'
 import { actionLabel, formatHex, layerName } from '../domain/formatters'
 import { keycodeName } from '../data/nizKeycodes'
 import { KeyActionPicker } from './KeyActionPicker'
+import { cx } from '../uiStyles'
+
+const inspectorLabelClass = 'flex items-center gap-[5px] text-[10px] font-[750] uppercase text-[#737a74]'
+const propertyRowClass = 'flex min-w-0 items-center justify-between gap-3'
+const propertyTermClass = 'inline-flex min-w-0 items-center gap-1.5 text-[11px] text-ink-muted'
+const propertyDescriptionClass = 'm-0 max-w-[120px] min-w-0 overflow-hidden text-right font-mono text-[11px] leading-[1.3] font-semibold text-ellipsis whitespace-nowrap text-ink'
 
 interface KeyInspectorProps {
   physicalKey: PhysicalKey | undefined
@@ -29,14 +35,17 @@ function ActionDetails({ action }: { action: NizKeyAction }) {
 
   if (action.kind === 'keys' || action.kind === 'emulate') {
     return (
-      <div className="keycode-list">
+      <div className="mt-[10px] flex flex-wrap items-center gap-1.5">
         {action.keycodes.map((keycode, index) => (
-          <span className="keycode-token" key={`${keycode}-${index}`}>
+          <span
+            className="inline-flex min-h-6 items-center rounded-[4px] border border-[#bcc2bc] border-b-2 bg-[#f8f9f7] px-[7px] text-[10px] font-[650] text-[#343934]"
+            key={`${keycode}-${index}`}
+          >
             {keycodeName(keycode)}
           </span>
         ))}
         {action.kind === 'emulate' && (
-          <span className="detail-note">{action.delayMs} ms</span>
+          <span className="text-[10px] text-ink-faint">{action.delayMs} ms</span>
         )}
       </div>
     )
@@ -44,15 +53,24 @@ function ActionDetails({ action }: { action: NizKeyAction }) {
 
   if (action.kind === 'macro') {
     return (
-      <dl className="inspector-properties inspector-properties--compact">
-        <div><dt>Mode</dt><dd>{action.repeatMode}</dd></div>
-        <div><dt>Events</dt><dd>{action.events.length}</dd></div>
-        <div><dt>Delay</dt><dd>{action.automaticDelayMs} ms</dd></div>
+      <dl className="mt-[10px] mb-0">
+        <div className={propertyRowClass}>
+          <dt className={propertyTermClass}>Mode</dt>
+          <dd className={propertyDescriptionClass}>{action.repeatMode}</dd>
+        </div>
+        <div className={cx(propertyRowClass, 'mt-[10px]')}>
+          <dt className={propertyTermClass}>Events</dt>
+          <dd className={propertyDescriptionClass}>{action.events.length}</dd>
+        </div>
+        <div className={cx(propertyRowClass, 'mt-[10px]')}>
+          <dt className={propertyTermClass}>Delay</dt>
+          <dd className={propertyDescriptionClass}>{action.automaticDelayMs} ms</dd>
+        </div>
       </dl>
     )
   }
 
-  return <p className="empty-value">{action.data.length} raw bytes</p>
+  return <p className="mt-[9px] mb-0 text-[10px] text-ink-faint">{action.data.length} raw bytes</p>
 }
 
 export function KeyInspector({
@@ -71,31 +89,41 @@ export function KeyInspector({
   useEffect(() => setPickerOpen(false), [activeLayer, physicalKey?.position])
 
   return (
-    <aside className="key-inspector">
-      <div className="inspector-heading">
-        <div className="selected-key-icon">
+    <aside className="min-h-0 min-w-0 overflow-y-auto border-l border-line bg-surface max-[900px]:grid max-[900px]:grid-cols-2 max-[900px]:overflow-visible max-[900px]:border-t max-[900px]:border-l-0 max-[700px]:grid-cols-1">
+      <div className="grid min-h-[72px] grid-cols-[36px_minmax(0,1fr)] items-center gap-[10px] border-b border-line px-[15px] py-3 max-[900px]:col-span-full">
+        <div className="flex size-9 items-center justify-center rounded-md border border-[#b9cde1] bg-action-soft text-action">
           <KeyRound size={20} />
         </div>
-        <div>
-          <span>Selected key</span>
-          <h2>{physicalKey?.label ?? 'Unknown'}</h2>
-          <small>{layerName(activeLayer)}</small>
+        <div className="min-w-0">
+          <span className="block text-[9px] text-ink-faint">Selected key</span>
+          <h2 className="mt-0.5 mb-0 overflow-hidden text-base font-bold text-ellipsis whitespace-nowrap text-ink">
+            {physicalKey?.label ?? 'Unknown'}
+          </h2>
+          <small className="mt-[3px] block text-[9px] text-ink-muted">
+            {layerName(activeLayer)}
+          </small>
         </div>
       </div>
 
-      <section className="inspector-section">
-        <div className="inspector-section-title">
-          <h3>Assignment</h3>
-          {changed && <span>Draft</span>}
+      <section className="border-b border-line p-4 max-[900px]:min-w-0 max-[900px]:border-r max-[900px]:border-b-0 max-[700px]:border-r-0 max-[700px]:border-b">
+        <div className="mb-[13px] flex items-center justify-between gap-3">
+          <h3 className={inspectorLabelClass}>Assignment</h3>
+          {changed && (
+            <span className="rounded-[3px] bg-warning-soft px-[5px] py-0.5 text-[8px] font-[750] uppercase text-warning">
+              Draft
+            </span>
+          )}
         </div>
         {record && currentAction ? (
           <>
-            <strong className="assignment-title">{actionLabel(currentAction)}</strong>
+            <strong className="block text-sm leading-[1.35] text-ink [overflow-wrap:anywhere]">
+              {actionLabel(currentAction)}
+            </strong>
             <ActionDetails action={currentAction} />
             {editable && onAssign ? (
-              <div className="inspector-assignment-actions">
+              <div className="mt-[14px] flex items-center gap-1.5">
                 <button
-                  className="inspector-change-button"
+                  className="inline-flex h-[31px] flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[5px] border border-line-strong bg-surface px-[10px] text-[10px] font-[650] text-[#4d554f] hover:border-[#a8afa8] hover:bg-[#eef0ed]"
                   type="button"
                   onClick={() => setPickerOpen(true)}
                 >
@@ -103,7 +131,7 @@ export function KeyInspector({
                   Change
                 </button>
                 <button
-                  className="inspector-tool-button"
+                  className="inline-flex size-[31px] flex-none cursor-pointer items-center justify-center rounded-[5px] border border-line-strong bg-surface p-0 text-[#4d554f] enabled:hover:border-[#a8afa8] enabled:hover:bg-[#eef0ed] disabled:cursor-default disabled:opacity-[0.38]"
                   type="button"
                   disabled={currentAction.kind === 'unset'}
                   onClick={() => onAssign({ kind: 'unset' })}
@@ -114,7 +142,7 @@ export function KeyInspector({
                 </button>
                 {changed && onRevert && (
                   <button
-                    className="inspector-tool-button"
+                    className="inline-flex size-[31px] flex-none cursor-pointer items-center justify-center rounded-[5px] border border-line-strong bg-surface p-0 text-[#4d554f] hover:border-[#a8afa8] hover:bg-[#eef0ed]"
                     type="button"
                     onClick={onRevert}
                     aria-label="Restore device assignment"
@@ -125,31 +153,64 @@ export function KeyInspector({
                 )}
               </div>
             ) : (
-              <p className="inspector-readonly-status">Read-only device profile</p>
+              <p className="mt-[13px] mb-0 text-[9px] text-ink-faint">
+                Read-only device profile
+              </p>
             )}
           </>
         ) : (
-          <p className="empty-value">No data for this key</p>
+          <p className="mt-[9px] mb-0 text-[10px] text-ink-faint">No data for this key</p>
         )}
       </section>
 
-      <details className="inspector-advanced">
-        <summary>
-          <ChevronRight size={14} />
+      <details
+        className="group/details border-b border-line max-[900px]:min-w-0 max-[900px]:border-b-0 max-[700px]:border-b"
+        data-technical-details
+      >
+        <summary className="flex min-h-[43px] cursor-pointer list-none items-center gap-1.5 px-4 text-[10px] font-[750] uppercase text-[#737a74] [&::-webkit-details-marker]:hidden">
+          <ChevronRight
+            className="transition-transform duration-140 group-open/details:rotate-90"
+            size={14}
+          />
           Technical details
         </summary>
-        <div className="inspector-advanced-body">
-          <dl className="inspector-properties">
-            <div><dt>Position</dt><dd>#{physicalKey?.position ?? '—'}</dd></div>
-            <div><dt>Layer</dt><dd>{layerName(activeLayer)}</dd></div>
-            <div><dt>Function</dt><dd>{record ? formatHex(record.functionType, 2) : '—'}</dd></div>
+        <div className="px-4 pb-4">
+          <dl className="m-0">
+            <div className={propertyRowClass}>
+              <dt className={propertyTermClass}>Position</dt>
+              <dd className={propertyDescriptionClass}>#{physicalKey?.position ?? '—'}</dd>
+            </div>
+            <div className={cx(propertyRowClass, 'mt-[10px]')}>
+              <dt className={propertyTermClass}>Layer</dt>
+              <dd className={propertyDescriptionClass}>{layerName(activeLayer)}</dd>
+            </div>
+            <div className={cx(propertyRowClass, 'mt-[10px]')}>
+              <dt className={propertyTermClass}>Function</dt>
+              <dd
+                className={propertyDescriptionClass}
+                data-function-type={record ? formatHex(record.functionType, 2) : undefined}
+              >
+                {record ? formatHex(record.functionType, 2) : '—'}
+              </dd>
+            </div>
           </dl>
-          <div className="inspector-raw-report">
-            <h3><Binary size={14} /> Raw report</h3>
-            <div className="hex-grid">
+          <div className="mt-4 border-t border-line pt-4">
+            <h3 className={cx(inspectorLabelClass, 'mb-[13px]')}>
+              <Binary size={14} /> Raw report
+            </h3>
+            <div className="grid grid-cols-8 gap-1">
               {record?.raw.slice(0, 16).map((byte, index) => (
-                <span key={index}>{byte.toString(16).padStart(2, '0').toUpperCase()}</span>
-              )) ?? <span>—</span>}
+                <span
+                  className="min-w-0 rounded-[3px] border border-[#e0e3df] bg-[#f6f7f5] px-px py-1 text-center font-mono text-[9px] leading-none text-[#5c645d]"
+                  key={index}
+                >
+                  {byte.toString(16).padStart(2, '0').toUpperCase()}
+                </span>
+              )) ?? (
+                <span className="min-w-0 rounded-[3px] border border-[#e0e3df] bg-[#f6f7f5] px-px py-1 text-center font-mono text-[9px] leading-none text-[#5c645d]">
+                  —
+                </span>
+              )}
             </div>
           </div>
         </div>

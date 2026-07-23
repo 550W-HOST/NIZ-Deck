@@ -1,5 +1,6 @@
 import { AlertCircle, CheckCircle2, Circle, LoaderCircle } from 'lucide-react'
 import type { DeviceStatus } from '../domain/types'
+import { cx } from '../uiStyles'
 
 interface StatusBarProps {
   status: DeviceStatus
@@ -43,14 +44,30 @@ export function StatusBar({
       : busy
         ? LoaderCircle
         : Circle
+  const statusTone = status === 'ready'
+    ? 'text-success'
+    : status === 'error' || status === 'unsupported'
+      ? 'text-danger'
+      : busy || status === 'inspection-only'
+        ? 'text-warning'
+        : 'text-[#707770]'
 
   return (
-    <footer className={`status-bar status-bar--${status}`}>
-      <div>
-        <Icon size={13} className={busy ? 'is-spinning' : ''} />
-        <span>{error ?? statusText[status]}</span>
+    <footer
+      className="flex min-w-0 items-center justify-start gap-4 border-t border-line bg-[#fafbfa] px-3 text-[9px] text-[#707770]"
+      data-status-bar
+      data-status={status}
+    >
+      <div className={cx('flex min-w-0 items-center gap-1.5', statusTone)}>
+        <Icon
+          size={13}
+          className={busy ? 'animate-spin [animation-duration:900ms]' : undefined}
+        />
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+          {error ?? statusText[status]}
+        </span>
         {showsRecordProgress && (
-          <strong>
+          <strong className="text-[9px] text-ink">
             {progressRecords}{progressTotal > 0 ? ` / ${progressTotal}` : ''} records
           </strong>
         )}

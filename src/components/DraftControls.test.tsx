@@ -19,7 +19,8 @@ describe('keymap draft controls', () => {
     )
 
     expect(markup).toContain('Redo draft change')
-    expect(markup).toContain('0</span><strong>changes pending')
+    expect(markup).toContain('data-change-count="0"')
+    expect(markup).toContain('changes pending')
     expect(markup).toMatch(/<button[^>]*disabled=""[^>]*aria-label="Reset all draft changes"/)
   })
 

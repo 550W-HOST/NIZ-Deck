@@ -1,9 +1,20 @@
 import { useEffect } from 'react'
-import { ClipboardCheck, RotateCcw, ShieldAlert, X } from 'lucide-react'
+import { ArrowRight, ClipboardCheck, RotateCcw, ShieldAlert, X } from 'lucide-react'
 import type { DraftAssignmentChange } from '../domain/keymapDraft'
 import type { KeyboardLayout } from '../domain/keyboardLayout'
 import { actionLabel, layerName } from '../domain/formatters'
 import { physicalKeyAt } from '../data/keyboardLayouts'
+import {
+  cx,
+  dialogBackdropClass,
+  dialogButtonClass,
+  dialogCloseButtonClass,
+  dialogFooterClass,
+  dialogHeaderClass,
+  dialogHeaderTitleClass,
+  dialogPanelClass,
+  dialogPrimaryButtonClass,
+} from '../uiStyles'
 
 interface DraftReviewDialogProps {
   open: boolean
@@ -33,55 +44,83 @@ export function DraftReviewDialog({
 
   return (
     <div
-      className="dialog-backdrop"
+      className={dialogBackdropClass}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
     >
       <section
-        className="draft-review-dialog"
+        className={cx(
+          dialogPanelClass,
+          'grid max-h-[calc(100svh-36px)] w-[min(100%,620px)] grid-rows-[52px_minmax(0,1fr)_54px]',
+        )}
         role="dialog"
         aria-modal="true"
         aria-labelledby="draft-review-title"
       >
-        <header>
-          <div>
+        <header className={dialogHeaderClass}>
+          <div className={dialogHeaderTitleClass}>
             <ClipboardCheck size={18} />
-            <h2 id="draft-review-title">Review keymap draft</h2>
+            <h2
+              className="m-0 overflow-hidden text-[15px] font-bold text-ellipsis whitespace-nowrap text-ink"
+              id="draft-review-title"
+            >
+              Review keymap draft
+            </h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" title="Close">
+          <button
+            className={dialogCloseButtonClass}
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+          >
             <X size={16} />
           </button>
         </header>
 
-        <div className="draft-review-body">
-          <div className="draft-review-safety">
+        <div className="min-h-0 min-w-0 overflow-auto">
+          <div className="grid grid-cols-[20px_minmax(0,1fr)] items-start gap-[9px] border-b border-[#e7d7ac] bg-warning-soft px-4 py-[13px] text-warning">
             <ShieldAlert size={17} />
-            <div>
-              <strong>Draft only</strong>
-              <span>Edited records remain local until protocol encoding is verified.</span>
+            <div className="min-w-0">
+              <strong className="block text-[10px]">Draft only</strong>
+              <span className="mt-[3px] block text-[9px] leading-[1.4] text-[#775f2f]">
+                Edited records remain local until protocol encoding is verified.
+              </span>
             </div>
           </div>
 
-          <div className="draft-review-list">
+          <div className="px-4">
             {changes.map((change) => (
-              <div className="draft-review-row" key={`${change.layer}:${change.position}`}>
-                <div>
-                  <strong>{physicalKeyAt(layout, change.position)?.label ?? `#${change.position}`}</strong>
-                  <span>{layerName(change.layer)}</span>
+              <div
+                className="grid min-w-0 grid-cols-[110px_minmax(0,1fr)] items-center gap-[18px] border-b border-line py-[11px] last:border-b-0 max-[520px]:grid-cols-[minmax(0,1fr)] max-[520px]:gap-[7px]"
+                key={`${change.layer}:${change.position}`}
+              >
+                <div className="min-w-0">
+                  <strong className="block overflow-hidden text-[11px] text-ellipsis whitespace-nowrap">
+                    {physicalKeyAt(layout, change.position)?.label ?? `#${change.position}`}
+                  </strong>
+                  <span className="mt-0.5 block text-[8px] text-ink-faint">
+                    {layerName(change.layer)}
+                  </span>
                 </div>
-                <div>
-                  <span>{actionLabel(change.original)}</span>
-                  <strong>{actionLabel(change.assignment)}</strong>
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_14px_minmax(0,1fr)] items-center gap-[7px]">
+                  <span className="col-start-1 min-w-0 overflow-hidden text-[9px] text-ellipsis whitespace-nowrap text-ink-muted">
+                    {actionLabel(change.original)}
+                  </span>
+                  <ArrowRight className="col-start-2 text-ink-faint" size={11} />
+                  <strong className="col-start-3 min-w-0 overflow-hidden text-[9px] text-ellipsis whitespace-nowrap text-action">
+                    {actionLabel(change.assignment)}
+                  </strong>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <footer>
+        <footer className={dialogFooterClass}>
           <button
-            className="dialog-button"
+            className={dialogButtonClass}
             type="button"
             onClick={() => {
               onReset()
@@ -92,7 +131,7 @@ export function DraftReviewDialog({
             Reset all
           </button>
           <button
-            className="dialog-button dialog-button--primary"
+            className={dialogPrimaryButtonClass}
             type="button"
             onClick={onClose}
           >

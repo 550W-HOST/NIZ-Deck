@@ -37,7 +37,7 @@ describe('KeyInspector information hierarchy', () => {
       <KeyInspector physicalKey={physicalKey} record={record} activeLayer={1} />,
     )
 
-    expect(markup).toContain('<details class="inspector-advanced">')
+    expect(markup).toContain('data-technical-details="true"')
     expect(markup).toContain('Technical details')
     expect(markup).toContain('Raw report')
     expect(markup).not.toContain('Packet')
@@ -68,7 +68,7 @@ describe('KeyInspector information hierarchy', () => {
     expect(markup).toContain('Left Ctrl + A')
     expect(markup).toContain('Change')
     expect(markup).toContain('Restore device assignment')
-    expect(markup).toContain('<dd>0x00</dd>')
+    expect(markup).toContain('data-function-type="0x00"')
     expect(markup).not.toContain('Read-only device profile')
   })
 })
